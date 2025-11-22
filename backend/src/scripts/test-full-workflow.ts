@@ -18,7 +18,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'http://localhost:8000/api';
 
 // Test wallet address (replace with your actual address for real testing)
 const TEST_ADDRESS = process.argv[2] || '0x904f64f755764162a228a7da49b1288160597165ec60ebbf5fb9a94957db76c3';

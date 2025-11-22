@@ -4,7 +4,7 @@ import { Strategy, FlashBorrowNode, FlashRepayNode } from '../types/strategy';
 async function test() {
   console.log('🚀 Starting API Test...');
   
-  const API_URL = 'http://localhost:3000/api';
+  const API_URL = 'http://localhost:8000/api';
   const sender = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
   // Strategy: Flash Borrow SUI -> Repay SUI (Same as simulator test)

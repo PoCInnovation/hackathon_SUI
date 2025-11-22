@@ -4,9 +4,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8000:3000"
     environment:
-      - PORT=8000
+      - PORT=3000
       # Add other environment variables here if needed
     restart: unless-stopped
 

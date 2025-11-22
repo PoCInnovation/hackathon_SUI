@@ -60,15 +60,14 @@ router.post('/seal/decrypt', async (req: Request, res: Response) => {
       });
     }
 
-    // Create a simple sign function that returns the provided signature
-    const signPersonalMessage = async (message: Uint8Array): Promise<string> => {
-      return signature;
-    };
+    // Create session key
+    const sessionKey = await sealWalrusService.createSessionKey(address);
 
     const decrypted = await sealWalrusService.decryptFromWalrus(
       metadataBlobId,
-      address,
-      signPersonalMessage
+      sessionKey,
+      signature,
+      address
     );
 
     // Get metadata to set correct filename
