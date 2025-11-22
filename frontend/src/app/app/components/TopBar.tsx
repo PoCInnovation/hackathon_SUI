@@ -1,6 +1,6 @@
 "use client";
 
-import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+import { ConnectButton } from "@mysten/dapp-kit";
 import { Box } from "@mui/material";
 
 interface TopBarProps {
@@ -21,7 +21,6 @@ const DRAWER_WIDTH_MINI = 80;
 const DRAWER_WIDTH_EXPANDED = 230;
 
 export function TopBar({ activeSection = "builder", sidebarExpanded = false }: TopBarProps) {
-  const currentAccount = useCurrentAccount();
   const sectionName = sectionNames[activeSection] || activeSection;
   const sidebarWidth = sidebarExpanded ? DRAWER_WIDTH_EXPANDED : DRAWER_WIDTH_MINI;
 

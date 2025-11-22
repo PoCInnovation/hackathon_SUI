@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { WalletModal } from "@/components/WalletModal";
 import { AppSidebar } from "./components/AppSidebar";
 import { TopBar } from "./components/TopBar";
+import { setWalletCookie, getWalletCookie } from "@/lib/cookieUtils";
 import { DashboardSection } from "./sections/DashboardSection";
 import { BuilderSection } from "./sections/BuilderSection";
 import { MarketplaceSection } from "./sections/MarketplaceSection";
@@ -25,26 +26,50 @@ export default function AppLayout({
   const [activeSection, setActiveSection] = useState("builder");
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     // Check if mobile
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
+
+    // Check if we have an active session (from localStorage via dapp-kit)
+    const hasSession = typeof window !== "undefined" &&
+      (localStorage.getItem("sui_wallet") || getWalletCookie());
+
+    // Give dapp-kit time to restore the wallet from storage
+    const loadingDuration = hasSession ? 2000 : 800;
 
     // Simulate initial loading
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1500);
+      // Only show modal if still no account after loading
+      setShowModal(true);
+    }, loadingDuration);
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
+
+  // Once account is connected, hide the modal
+  useEffect(() => {
+    if (currentAccount) {
+      setShowModal(false);
+    }
+  }, [currentAccount]);
+
+  // Save wallet to cookie when connected
+  useEffect(() => {
+    if (currentAccount?.address) {
+      setWalletCookie(currentAccount.address);
+    }
+  }, [currentAccount?.address]);
 
   // Show loading state
   if (isLoading) {
@@ -167,8 +192,8 @@ export default function AppLayout({
     );
   }
 
-  // Show wallet modal if not connected
-  const showWalletModal = !currentAccount;
+  // Show wallet modal only if loading is done and still no account
+  const showWalletModal = !isLoading && !currentAccount && showModal;
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0a0f1e' }}>
