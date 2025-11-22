@@ -18,6 +18,9 @@ export interface SwapEstimate {
   fee: string;                   // Protocol fee amount
   sqrt_price_limit?: string;     // For CLMM protocols
   amount_limit?: string;         // Min output / max input for slippage
+  pool_coin_type_a?: string;     // Actual pool coin type A
+  pool_coin_type_b?: string;     // Actual pool coin type B
+  is_inverted?: boolean;         // True if pool coins are inverted relative to params
 }
 
 /**
@@ -34,9 +37,10 @@ export interface DexAdapter {
    * MUST be called before swap() for accurate slippage protection
    *
    * @param node - DEX swap node from strategy
+   * @param estimatedInputAmount - Optional estimated input amount (for chained swaps with "ALL")
    * @returns Swap estimate
    */
-  preSwap(node: DexSwapNode): Promise<SwapEstimate>;
+  preSwap(node: DexSwapNode, estimatedInputAmount?: string): Promise<SwapEstimate>;
 
   /**
    * Add swap transaction to PTB
@@ -66,7 +70,7 @@ export interface DexAdapter {
 export abstract class BaseDexAdapter implements DexAdapter {
   abstract readonly protocol: string;
 
-  abstract preSwap(node: DexSwapNode): Promise<SwapEstimate>;
+  abstract preSwap(node: DexSwapNode, estimatedInputAmount?: string): Promise<SwapEstimate>;
   abstract swap(tx: Transaction, node: DexSwapNode, coinIn: any, estimate: SwapEstimate): any;
 
   calculateAmountLimit(estimate: SwapEstimate, slippageTolerance: string, isInput: boolean): string {

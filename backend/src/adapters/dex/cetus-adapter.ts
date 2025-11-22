@@ -34,34 +34,54 @@ export class CetusAdapter extends BaseDexAdapter {
     return MAINNET_ADDRESSES;
   }
 
-  async preSwap(node: DexSwapNode): Promise<SwapEstimate> {
+  async preSwap(node: DexSwapNode, estimatedInputAmount?: string): Promise<SwapEstimate> {
     const params = node.params as CetusSwapParams;
 
     if (!this.sdk) {
       return this.mockPreSwap(params);
     }
 
+    let pool;
     try {
       // Fetch pool data
-      const pool = await this.sdk.Pool.getPool(params.pool_id);
+      pool = await this.sdk.Pool.getPool(params.pool_id);
+    } catch (error) {
+      console.warn("Failed to fetch pool:", error);
+      return this.mockPreSwap(params, estimatedInputAmount);
+    }
 
-      if (!pool) {
-        throw new Error(`Cetus pool not found: ${params.pool_id}`);
-      }
+    if (!pool) {
+      throw new Error(`Cetus pool not found: ${params.pool_id}`);
+    }
+    
+    // Check for coin type inversion
+    let is_inverted = false;
+    if (pool.coinTypeA === params.coin_type_b && pool.coinTypeB === params.coin_type_a) {
+      is_inverted = true;
+      console.log(`Pool ${params.pool_id} is inverted relative to params.`);
+    }
 
+    // If amount is "ALL", use the estimated amount from the previous swap
+    if (params.amount === "ALL") {
+      return this.mockPreSwap(params, estimatedInputAmount, pool.coinTypeA, pool.coinTypeB, is_inverted);
+    }
+
+    try {
       // Determine swap direction
-      const a2b = params.direction === "A_TO_B";
+      const user_a2b = params.direction === "A_TO_B";
       const byAmountIn = params.amount_mode === "EXACT_IN";
+      
+      const real_a2b = is_inverted ? !user_a2b : user_a2b;
 
       // Pre-swap calculation
       const preswapResult = await this.sdk.Swap.preswap({
         pool: pool,
         currentSqrtPrice: pool.current_sqrt_price,
-        coinTypeA: params.coin_type_a,
-        coinTypeB: params.coin_type_b,
+        coinTypeA: pool.coinTypeA,
+        coinTypeB: pool.coinTypeB,
         decimalsA: 9, // TODO: Get actual decimals dynamically
         decimalsB: 6, // TODO: Get actual decimals dynamically
-        a2b: a2b,
+        a2b: real_a2b,
         byAmountIn: byAmountIn,
         amount: params.amount,
       });
@@ -71,7 +91,7 @@ export class CetusAdapter extends BaseDexAdapter {
       }
 
       // Calculate sqrt_price_limit
-      const sqrt_price_limit = a2b
+      const sqrt_price_limit = real_a2b
         ? "4295048016" // MIN_SQRT_PRICE
         : "79226673515401279992447579055"; // MAX_SQRT_PRICE
 
@@ -90,25 +110,48 @@ export class CetusAdapter extends BaseDexAdapter {
         fee: preswapResult.estimatedFeeAmount?.toString() || "0",
         sqrt_price_limit: params.sqrt_price_limit || sqrt_price_limit,
         amount_limit: amount_limit,
+        pool_coin_type_a: pool.coinTypeA,
+        pool_coin_type_b: pool.coinTypeB,
+        is_inverted: is_inverted
       };
     } catch (error) {
       console.warn("Cetus preswap failed, using mock estimate:", error);
-      return this.mockPreSwap(params);
+      // Pass pool info to mock
+      return this.mockPreSwap(params, estimatedInputAmount, pool.coinTypeA, pool.coinTypeB, is_inverted);
     }
   }
 
-  private mockPreSwap(params: CetusSwapParams): SwapEstimate {
+  private mockPreSwap(
+    params: CetusSwapParams, 
+    estimatedInputAmount?: string,
+    poolCoinA?: string,
+    poolCoinB?: string,
+    isInverted: boolean = false
+  ): SwapEstimate {
     // Mock estimate for development/testing
-    const a2b = params.direction === "A_TO_B";
-    const sqrt_price_limit = a2b ? "4295048016" : "79226673515401279992447579055";
+    const user_a2b = params.direction === "A_TO_B";
+    const real_a2b = isInverted ? !user_a2b : user_a2b;
+    
+    const sqrt_price_limit = real_a2b ? "4295048016" : "79226673515401279992447579055";
+
+    // For "ALL", use the estimated amount from the previous swap, or a default placeholder
+    const mockAmount = params.amount === "ALL"
+      ? (estimatedInputAmount || "1000000")
+      : params.amount;
+
+    const byAmountIn = params.amount_mode === "EXACT_IN";
 
     return {
-      amount_in: params.amount,
-      amount_out: params.amount, // 1:1 for mock
+      amount_in: mockAmount,
+      amount_out: mockAmount, // 1:1 for mock
       price_impact: "0",
       fee: "0",
       sqrt_price_limit: params.sqrt_price_limit || sqrt_price_limit,
-      amount_limit: params.amount,
+      // Use permissive limits for mock to avoid slippage errors
+      amount_limit: byAmountIn ? "0" : "18446744073709551615",
+      pool_coin_type_a: poolCoinA || params.coin_type_a,
+      pool_coin_type_b: poolCoinB || params.coin_type_b,
+      is_inverted: isInverted
     };
   }
 
@@ -119,12 +162,37 @@ export class CetusAdapter extends BaseDexAdapter {
     const params = node.params as CetusSwapParams;
     const config = this.getConfig();
 
-    const a2b = params.direction === "A_TO_B";
+    const user_a2b = params.direction === "A_TO_B";
     const byAmountIn = params.amount_mode === "EXACT_IN";
-    const amount = BigInt(params.amount);
+    
+    // Use pool info from estimate if available
+    const is_inverted = estimate.is_inverted || false;
+    const pool_coin_a = estimate.pool_coin_type_a || params.coin_type_a;
+    const pool_coin_b = estimate.pool_coin_type_b || params.coin_type_b;
+    
+    const real_a2b = is_inverted ? !user_a2b : user_a2b;
+
+    // Support "ALL" to use the estimated amount from preSwap
+    // We cannot use coin::value in the PTB because the result of a moveCall
+    // cannot be directly used as a u64 argument in another moveCall
+    // Instead, we use the amount_in from the estimate (which came from the previous swap's amount_out)
+    let amount: any;
+    if (params.amount === "ALL") {
+      // Use the actual coin value from the input coin
+      const inputCoinType = user_a2b ? params.coin_type_a : params.coin_type_b;
+      amount = tx.moveCall({
+        target: "0x2::coin::value",
+        arguments: [coinIn],
+        typeArguments: [inputCoinType],
+      });
+    } else {
+      amount = tx.pure.u64(BigInt(params.amount));
+    }
 
     // Create zero coin for the other side
-    const otherCoinType = a2b ? params.coin_type_b : params.coin_type_a;
+    // If real_a2b (A->B), we need zero B.
+    // If !real_a2b (B->A), we need zero A.
+    const otherCoinType = real_a2b ? pool_coin_b : pool_coin_a;
     const zeroCoin = tx.moveCall({
       target: "0x2::coin::zero",
       typeArguments: [otherCoinType],
@@ -133,11 +201,11 @@ export class CetusAdapter extends BaseDexAdapter {
     // Prepare arguments for router::swap
     // Based on Navi SDK implementation
     // Arguments: [GlobalConfig, Pool, CoinA, CoinB, a2b, by_amount_in, amount, limit, is_pre_swap, Clock]
-    
-    // If a2b: coinA is input (coinIn), coinB is output (zeroCoin)
-    // If b2a: coinA is output (zeroCoin), coinB is input (coinIn)
-    const coinA = a2b ? coinIn : zeroCoin;
-    const coinB = a2b ? zeroCoin : coinIn;
+
+    // If real_a2b (A->B): coinA is input (coinIn), coinB is output (zeroCoin)
+    // If !real_a2b (B->A): coinA is output (zeroCoin), coinB is input (coinIn)
+    const coinA = real_a2b ? coinIn : zeroCoin;
+    const coinB = real_a2b ? zeroCoin : coinIn;
 
     const [coinAOut, coinBOut] = tx.moveCall({
       target: `${config.CETUS.PACKAGE}::router::swap`,
@@ -146,32 +214,27 @@ export class CetusAdapter extends BaseDexAdapter {
         tx.object(params.pool_id),
         coinA,
         coinB,
-        tx.pure.bool(a2b),
+        tx.pure.bool(real_a2b),
         tx.pure.bool(byAmountIn),
-        tx.pure.u64(amount),
+        amount,
         tx.pure.u128(estimate.sqrt_price_limit || "0"),
         tx.pure.bool(false), // is_pre_swap = false
         tx.object("0x6"), // Clock
       ],
-      typeArguments: [params.coin_type_a, params.coin_type_b],
+      typeArguments: [pool_coin_a, pool_coin_b],
     });
 
     // Handle the results
-    // If a2b: coinAOut is remainder of A, coinBOut is swapped B
-    // If b2a: coinAOut is swapped A, coinBOut is remainder of B
+    // If real_a2b (A->B): coinAOut is remainder of A, coinBOut is swapped B
+    // If !real_a2b (B->A): coinAOut is swapped A, coinBOut is remainder of B
     
-    if (a2b) {
+    if (real_a2b) {
       // Return swapped B. Remainder A needs to be handled.
-      // Since we can't easily transfer to user here without sender address,
-      // and we expect exact input usually, the remainder should be minimal.
-      // Ideally we should transfer coinAOut to the user.
-      // For now, we leave it in the transaction context (it might cause unused value error if not 0).
-      // TODO: Implement transfer to sender if possible.
-      this.transferOrDestroy(tx, coinAOut, params.coin_type_a);
+      this.transferOrDestroy(tx, coinAOut, pool_coin_a);
       return coinBOut;
     } else {
       // Return swapped A. Remainder B needs to be handled.
-      this.transferOrDestroy(tx, coinBOut, params.coin_type_b);
+      this.transferOrDestroy(tx, coinBOut, pool_coin_b);
       return coinAOut;
     }
   }

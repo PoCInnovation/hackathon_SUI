@@ -13,6 +13,10 @@ import { z } from "zod";
 const SuiAddressSchema = z.string().regex(/^0x[a-fA-F0-9]{1,64}$/, "Invalid Sui address format");
 const CoinTypeSchema = z.string().regex(/^0x[a-fA-F0-9]+::\w+::\w+$/, "Invalid coin type format");
 const U64StringSchema = z.string().regex(/^\d+$/, "Must be a numeric string");
+const U64OrAllStringSchema = z.union([
+  z.string().regex(/^\d+$/, "Must be a numeric string"),
+  z.literal("ALL")
+]);
 const UUIDSchema = z.string().uuid();
 
 // ============================================================================
@@ -127,7 +131,7 @@ export const CetusSwapParamsSchema = z.object({
   coin_type_b: CoinTypeSchema,
   direction: z.enum(["A_TO_B", "B_TO_A"]),
   amount_mode: AmountModeSchema,
-  amount: U64StringSchema,
+  amount: U64OrAllStringSchema,
   slippage_tolerance: z.string().regex(/^0\.\d+$/, "Slippage must be decimal (e.g., 0.05)"),
   sqrt_price_limit: U64StringSchema.optional(),
 });
@@ -135,7 +139,7 @@ export const CetusSwapParamsSchema = z.object({
 export const DeepBookSwapParamsSchema = z.object({
   pool_key: z.string().min(1),
   direction: z.enum(["BASE_TO_QUOTE", "QUOTE_TO_BASE"]),
-  amount: U64StringSchema,
+  amount: U64OrAllStringSchema,
   slippage_tolerance: z.string().regex(/^0\.\d+$/).optional(),
 });
 
@@ -144,14 +148,14 @@ export const TurbosSwapParamsSchema = z.object({
   coin_type_a: CoinTypeSchema,
   coin_type_b: CoinTypeSchema,
   direction: z.enum(["A_TO_B", "B_TO_A"]),
-  amount: U64StringSchema,
+  amount: U64OrAllStringSchema,
   slippage_tolerance: z.string().regex(/^0\.\d+$/),
 });
 
 export const AftermathSwapParamsSchema = z.object({
   coin_type_in: CoinTypeSchema,
   coin_type_out: CoinTypeSchema,
-  amount_in: U64StringSchema,
+  amount_in: U64OrAllStringSchema,
   slippage_tolerance: z.string().regex(/^0\.\d+$/),
   referrer: SuiAddressSchema.optional(),
   platform_fee: z.string().regex(/^0\.\d+$/).optional(),

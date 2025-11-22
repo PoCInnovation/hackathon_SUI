@@ -125,7 +125,18 @@ export class TransactionBuilder {
         throw new Error(`No adapter found for DEX protocol: ${node.protocol}`);
       }
 
-      const estimate = await adapter.preSwap(node);
+      // For swaps with "ALL", try to use the estimate from the previous swap
+      let estimatedAmount: string | undefined;
+      if ((node.params as any).amount === "ALL" && node.inputs?.coin_in) {
+        const inputRef = node.inputs.coin_in as string;
+        const [sourceNodeId] = inputRef.split(".");
+        const sourceEstimate = this.swapEstimateCache.get(sourceNodeId);
+        if (sourceEstimate) {
+          estimatedAmount = sourceEstimate.amount_out;
+        }
+      }
+
+      const estimate = await adapter.preSwap(node, estimatedAmount);
       this.swapEstimateCache.set(node.id, estimate);
     }
   }

@@ -293,9 +293,181 @@ After execution, check the transaction on [Suiscan](https://suiscan.xyz/mainnet)
 - Verify the gas costs
 - Check the balance changes
 
+## 🔄 5. Test Flash Loan + Swap Arbitrage
+
+### SUI → USDC → SUI Swap Strategy
+
+This advanced strategy demonstrates a complete arbitrage loop:
+1. Borrows **1 SUI** (1,000,000,000 MIST) from Navi Protocol
+2. Swaps **SUI to USDC** on Cetus DEX
+3. Swaps **USDC back to SUI** on Cetus DEX
+4. Splits fee from wallet to cover flash loan fee
+5. Merges funds and repays flash loan
+
+**Pool Information:**
+- **SUI-USDC Pool ID**: `0xcf994611fd4c48e277ce3ffd4d4364c914af2c3cbb05f7bf6facd371de688630`
+- **SUI Type**: `0x2::sui::SUI`
+- **USDC Type**: `0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN`
+
+**Estimated Cost:** ~0.01 SUI for gas + flash loan fee (0.06% of 1 SUI = 0.0006 SUI)
+
+```bash
+curl -X POST http://localhost:3000/api/simulate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sender": "0x3c7ea737b5f0390399892c70e899498f819e7593eabad27466acfc59fedb979d",
+    "strategy": {gs
+      "id": "123e4567-e89b-12d3-a456-426614174002",
+      "version": "1.0.0",
+      "meta": {
+        "name": "SUI-USDC-SUI Arbitrage Test",
+        "author": "0x3c7ea737b5f0390399892c70e899498f819e7593eabad27466acfc59fedb979d",
+        "description": "Flash loan with Cetus swap arbitrage",
+        "created_at": 1700000000000,
+        "updated_at": 1700000000000,
+        "tags": ["test", "arbitrage", "mainnet"]
+      },
+      "nodes": [
+        {
+          "id": "borrow_1",
+          "type": "FLASH_BORROW",
+          "protocol": "NAVI",
+          "params": {
+            "asset": "0x2::sui::SUI",
+            "amount": "1000000000"
+          },
+          "outputs": [
+            { "id": "coin_borrowed", "type": "Coin<0x2::sui::SUI>", "output_type": "COIN" },
+            { "id": "receipt", "type": "FlashLoanReceipt", "output_type": "RECEIPT" }
+          ]
+        },
+        {
+          "id": "swap_1",
+          "type": "DEX_SWAP",
+          "protocol": "CETUS",
+          "params": {
+            "pool_id": "0xcf994611fd4c48e277ce3ffd4d4364c914af2c3cbb05f7bf6facd371de688630",
+            "coin_type_a": "0x2::sui::SUI",
+            "coin_type_b": "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN",
+            "direction": "A_TO_B",
+            "amount_mode": "EXACT_IN",
+            "amount": "1000000000",
+            "slippage_tolerance": "0.01"
+          },
+          "inputs": { "coin_in": "borrow_1.coin_borrowed" },
+          "outputs": [
+            { "id": "usdc_coin", "type": "Coin<USDC>", "output_type": "COIN" }
+          ]
+        },
+        {
+          "id": "swap_2",
+          "type": "DEX_SWAP",
+          "protocol": "CETUS",
+          "params": {
+            "pool_id": "0xcf994611fd4c48e277ce3ffd4d4364c914af2c3cbb05f7bf6facd371de688630",
+            "coin_type_a": "0x2::sui::SUI",
+            "coin_type_b": "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN",
+            "direction": "B_TO_A",
+            "amount_mode": "EXACT_IN",
+            "amount": "ALL",
+            "slippage_tolerance": "0.01"
+          },
+          "inputs": { "coin_in": "swap_1.usdc_coin" },
+          "outputs": [
+            { "id": "sui_coin_swapped", "type": "Coin<0x2::sui::SUI>", "output_type": "COIN" }
+          ]
+        },
+        {
+          "id": "split_gas",
+          "type": "COIN_SPLIT",
+          "protocol": "NATIVE",
+          "params": {
+            "amounts": ["10000000"]
+          },
+          "inputs": { "coin": "GAS" },
+          "outputs": [
+            { "id": "fee_coin", "type": "Coin<0x2::sui::SUI>", "output_type": "COIN" }
+          ]
+        },
+        {
+          "id": "merge_funds",
+          "type": "COIN_MERGE",
+          "protocol": "NATIVE",
+          "params": {},
+          "inputs": {
+            "target_coin": "swap_2.sui_coin_swapped",
+            "merge_coins": ["split_gas.fee_coin"]
+          },
+          "outputs": [
+            { "id": "merged_coin", "type": "Coin<0x2::sui::SUI>", "output_type": "COIN" }
+          ]
+        },
+        {
+          "id": "repay_1",
+          "type": "FLASH_REPAY",
+          "protocol": "NAVI",
+          "params": {
+            "asset": "0x2::sui::SUI"
+          },
+          "inputs": {
+            "coin_repay": "merge_funds.merged_coin",
+            "receipt": "borrow_1.receipt"
+          }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "source": "borrow_1", "source_output": "coin_borrowed", "target": "swap_1", "target_input": "coin_in", "edge_type": "COIN", "coin_type": "0x2::sui::SUI" },
+        { "id": "e2", "source": "swap_1", "source_output": "usdc_coin", "target": "swap_2", "target_input": "coin_in", "edge_type": "COIN", "coin_type": "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN" },
+        { "id": "e3", "source": "swap_2", "source_output": "sui_coin_swapped", "target": "merge_funds", "target_input": "target_coin", "edge_type": "COIN", "coin_type": "0x2::sui::SUI" },
+        { "id": "e4", "source": "split_gas", "source_output": "fee_coin", "target": "merge_funds", "target_input": "merge_coins", "edge_type": "COIN", "coin_type": "0x2::sui::SUI" },
+        { "id": "e5", "source": "merge_funds", "source_output": "merged_coin", "target": "repay_1", "target_input": "coin_repay", "edge_type": "COIN", "coin_type": "0x2::sui::SUI" },
+        { "id": "e6", "source": "borrow_1", "source_output": "receipt", "target": "repay_1", "target_input": "receipt", "edge_type": "RECEIPT" }
+      ]
+    }
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "estimated_gas": 15000000,
+  "estimated_profit_loss": [
+    {
+      "coin_type": "0x2::sui::SUI",
+      "amount": "-15600000"
+    }
+  ],
+  "swap_estimates": {
+    "swap_1": {
+      "amount_in": "1000000000",
+      "amount_out": "~1000000",
+      "price_impact": "0.01",
+      "fee": "~3000"
+    },
+    "swap_2": {
+      "amount_in": "~1000000",
+      "amount_out": "~995000000",
+      "price_impact": "0.01",
+      "fee": "~3000"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}
+```
+
+**Understanding the Arbitrage:**
+- This tests the complete swap infrastructure
+- Due to swap fees and price impact, this will result in a small loss (expected in a circular swap)
+- The goal is to verify the technical integration works
+- In a real arbitrage, you'd swap on different DEXs with price discrepancies
+
 ## ⚠️ Common Issues
 
 - **Insufficient Balance**: Ensure you have at least 0.1 SUI for gas + fees
 - **Invalid Sender Address**: Make sure to replace `YOUR_WALLET_ADDRESS` with your actual address
 - **Network Mismatch**: Verify you're connected to mainnet
 - **Gas Estimation**: If simulation succeeds but execution fails, check gas price fluctuations
+- **Swap Slippage**: If swaps fail, increase the `slippage_tolerance` parameter (e.g., from 0.01 to 0.05)
+- **Pool Liquidity**: Ensure the Cetus pool has sufficient liquidity for your swap amounts
