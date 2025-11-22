@@ -20,8 +20,8 @@ export class Simulator {
   private builder: TransactionBuilder;
   private client: SuiClient;
 
-  constructor(private readonly network: "mainnet" | "testnet" = "testnet") {
-    this.builder = new TransactionBuilder(network);
+  constructor(private readonly network: "mainnet" | "testnet" = "mainnet") {
+    this.builder = new TransactionBuilder();
     this.client = new SuiClient({ url: this.getFullNodeUrl() });
   }
 

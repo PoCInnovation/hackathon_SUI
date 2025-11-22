@@ -2,12 +2,11 @@
 import { Transaction } from '@mysten/sui/transactions';
 import { NaviAdapter } from '../adapters/flashloan/navi-adapter';
 import { FlashBorrowNode, FlashRepayNode } from '../types/strategy';
-import { TESTNET_ADDRESSES } from '../config/addresses';
 
 async function test() {
-  console.log('🚀 Starting Navi Flash Loan Adapter Test on Testnet...');
+  console.log('🚀 Starting Navi Flash Loan Adapter Test on Mainnet...');
 
-  const adapter = new NaviAdapter('testnet');
+  const adapter = new NaviAdapter();
   
   // Mock Flash Loan Nodes
   // Borrow 1 SUI

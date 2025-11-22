@@ -9,22 +9,20 @@ import { Transaction } from "@mysten/sui/transactions";
 import { CetusClmmSDK } from "@cetusprotocol/cetus-sui-clmm-sdk";
 import { DexSwapNode, CetusSwapParams } from "../../types/strategy";
 import { BaseDexAdapter, SwapEstimate } from "./types";
-import { MAINNET_ADDRESSES, TESTNET_ADDRESSES } from "../../config/addresses";
+import { MAINNET_ADDRESSES } from "../../config/addresses";
 
 export class CetusAdapter extends BaseDexAdapter {
   readonly protocol = "CETUS";
   private sdk: CetusClmmSDK | null = null;
 
-  constructor(
-    private readonly network: "mainnet" | "testnet" = "testnet"
-  ) {
+  constructor() {
     super();
 
-    // Initialize Cetus SDK with required options
+    // Initialize Cetus SDK with required options (Mainnet)
     try {
       const config = this.getConfig();
       this.sdk = new CetusClmmSDK({
-        fullRpcUrl: this.getFullNodeUrl(),
+        fullRpcUrl: "https://fullnode.mainnet.sui.io:443",
         simulationAccount: { address: "0x0000000000000000000000000000000000000000000000000000000000000000" },
       } as any); // Using any to bypass strict type check for now, as we only need RPC for pre-swap
     } catch (error) {
@@ -33,7 +31,7 @@ export class CetusAdapter extends BaseDexAdapter {
   }
 
   private getConfig() {
-    return this.network === "mainnet" ? MAINNET_ADDRESSES : TESTNET_ADDRESSES;
+    return MAINNET_ADDRESSES;
   }
 
   async preSwap(node: DexSwapNode): Promise<SwapEstimate> {
@@ -207,11 +205,5 @@ export class CetusAdapter extends BaseDexAdapter {
   private calculateMaxInput(estimatedInput: bigint, slippage: number): string {
     const maxInput = (estimatedInput * BigInt(Math.floor((1 + slippage) * 1000000))) / BigInt(1000000);
     return maxInput.toString();
-  }
-
-  private getFullNodeUrl(): string {
-    return this.network === "mainnet"
-      ? "https://fullnode.mainnet.sui.io:443"
-      : "https://fullnode.testnet.sui.io:443";
   }
 }

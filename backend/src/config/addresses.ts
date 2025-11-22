@@ -1,4 +1,14 @@
 
+/**
+ * Navi Protocol Mainnet Addresses
+ * Source: navi-sdk v1.6.23
+ *
+ * STORAGE: Main storage object containing all protocol data (pools, reserves, configs)
+ * PRICE_ORACLE: Oracle providing real-time asset prices
+ * FLASHLOAN_CONFIG: Flash loan configuration (fees, supported assets, limits)
+ * INCENTIVE_V2: Legacy rewards system
+ * INCENTIVE_V3: Current rewards system (recommended)
+ */
 export const MAINNET_ADDRESSES = {
   NAVI: {
     PACKAGE: "0xee0041239b89564ce870a7dec5ddc5d114367ab94a1137e90aa0633cb76518e0",
@@ -51,57 +61,6 @@ export const MAINNET_ADDRESSES = {
       pools_id: "0x1eabed72c53feb3805120a081dc15963c204dc8d091542592abaf7a35689b2fb",
       global_config_id: "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f", // CLMM Global Config
       global_vault_id: "0xce7bceef26d3ad1f6d9b6f13a953f053e6ed3ca77907516481ce99ae8e588f2b"
-    }
-  }
-};
-
-export const TESTNET_ADDRESSES = {
-  NAVI: {
-    PACKAGE: "0x8200ce83e1bc0894b641f0a466694b4f6e25d3f9cc3093915a887ec9e7f3395e",
-    STORAGE: "0x111b9d70174462646e7e47e6fec5da9eb50cea14e6c5a55a910c8b0e44cd2913",
-    PRICE_ORACLE: "0x25c718f494ff63021f75642ecaaeda826f44b2d9d59859a8ad45ef0fba9626f2",
-    FLASHLOAN_CONFIG: "0x3672b2bf471a60c30a03325f104f92fb195c9d337ba58072dce764fe2aa5e2dc",
-    INCENTIVE_V2: "0x952b6726bbcc08eb14f38a3632a3f98b823f301468d7de36f1d05faaef1bdd2a",
-    INCENTIVE_V3: "0x5db4063954356f37ebdc791ec30f4cfd39734feff18820ee44dc2d2de96db899",
-    POOLS: {
-      "0x2::sui::SUI": {
-        poolId: "0x68b420259e3adcdadf165350984f59dfdaf677c3d639aaa54c1d907dae2dd1a3",
-        assetId: 0,
-        name: "SUI"
-      },
-      "0x0eedc3857f39f5e44b5786ebcd790317902ffca9960f44fcea5b7589cfc7a784::usdt::USDT": {
-        poolId: "0x8c07168a57d3734e6fa710e734d228507159b567f8bee9becf2847cd5c5954ec",
-        assetId: 2,
-        name: "USDT"
-      },
-      "0x0eedc3857f39f5e44b5786ebcd790317902ffca9960f44fcea5b7589cfc7a784::usdc::USDC": {
-        poolId: "0x8bf81e96302d4307d8da07e49328875e1f2e205dc0c4d457bffe6a8c1740ba25",
-        assetId: 1,
-        name: "wUSDC"
-      },
-      "0x0eedc3857f39f5e44b5786ebcd790317902ffca9960f44fcea5b7589cfc7a784::weth::WETH": {
-        poolId: "0x459f8732415859e4fba362e372db4b3a474d1d18ec54176ac401a2a2ee21f29b",
-        assetId: 3,
-        name: "WETH"
-      },
-      "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS": {
-        poolId: "0xf6a2e1d9fd7c788f1e0763fc8fe277da8b21805d66aa31ea54e56f85a0f32f86",
-        assetId: 7,
-        name: "CETUS"
-      },
-      "0x549e8b69270defbfafd4f94e17ec44cdbdd99820b33bda2278dea3b9a32d3f55::cert::CERT": { // vSui
-        poolId: "0xd386c359fd6295254d92022e902319e85c552bc5a8bd7af003ebe3074bd7f155",
-        assetId: 4,
-        name: "vSui"
-      }
-    }
-  },
-  CETUS: {
-    PACKAGE: "0xf5ff7d5ba73b581bca6b4b9fa0049cd320360abd154b809f8700a8fd3cfaf7ca", // Router/Aggregator Package
-    CONFIG: {
-      pools_id: "0x0868b71c0cba55bf0faf6c40df8c179c67a4d0ba0e79965b68b3d72d7dfbf666",
-      global_config_id: "0x6f4149091a5aea0e818e7243a13adcfb403842d670b9a2089de058512620687a", // CLMM Global Config
-      global_vault_id: "0xf3114a74d54cbe56b3e68f9306661c043ede8c6615f0351b0c3a93ce895e1699"
     }
   }
 };

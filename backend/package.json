@@ -9,7 +9,9 @@
     "dev": "tsc --watch",
     "test": "jest",
     "lint": "eslint src --ext .ts",
-    "start:api": "ts-node src/api/server.ts"
+    "start": "node dist/api/server.js",
+    "start:api": "tsx src/api/server.ts",
+    "start:dev": "tsx watch src/api/server.ts"
   },
   "keywords": [
     "sui",
@@ -23,12 +25,15 @@
   "packageManager": "pnpm@10.17.0",
   "dependencies": {
     "@cetusprotocol/cetus-sui-clmm-sdk": "^4.1.0",
-    "@mysten/sui": "^1.14.0",
+    "@mysten/seal": "^0.9.4",
+    "@mysten/sui": "^1.45.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "multer": "^2.0.2",
     "navi-sdk": "^1.2.2",
+    "tsx": "^4.20.6",
     "uuid": "^11.0.3",
     "zod": "^3.23.8"
   },
@@ -38,6 +43,7 @@
     "@types/express": "^5.0.5",
     "@types/node": "^22.10.1",
     "@types/uuid": "^10.0.0",
+    "@types/multer": "^1.4.11",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "eslint": "^9.16.0",

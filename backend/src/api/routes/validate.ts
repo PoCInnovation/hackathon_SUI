@@ -38,4 +38,3 @@ router.post('/validate', (req: Request, res: Response): void => {
 });
 
 export default router;
-

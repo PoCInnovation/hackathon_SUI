@@ -1,7 +1,6 @@
 
 import { Simulator } from '../core/simulator';
 import { Strategy, FlashBorrowNode, FlashRepayNode } from '../types/strategy';
-import { TESTNET_ADDRESSES } from '../config/addresses';
 
 async function test() {
   console.log('🚀 Starting Simulator Test on Testnet...');

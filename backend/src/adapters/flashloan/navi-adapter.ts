@@ -8,20 +8,14 @@
 import { Transaction } from "@mysten/sui/transactions";
 import { FlashBorrowNode, FlashRepayNode } from "../../types/strategy";
 import { BaseFlashLoanAdapter, BorrowResult } from "./types";
-import { MAINNET_ADDRESSES, TESTNET_ADDRESSES } from "../../config/addresses";
+import { MAINNET_ADDRESSES } from "../../config/addresses";
 
 export class NaviAdapter extends BaseFlashLoanAdapter {
   readonly protocol = "NAVI";
   protected readonly feePercentage = 0.0006; // 0.06%
 
-  constructor(
-    private readonly network: "mainnet" | "testnet" = "testnet"
-  ) {
-    super();
-  }
-
   private getConfig() {
-    return this.network === "mainnet" ? MAINNET_ADDRESSES : TESTNET_ADDRESSES;
+    return MAINNET_ADDRESSES;
   }
 
   borrow(tx: Transaction, node: FlashBorrowNode): BorrowResult {
@@ -68,7 +62,8 @@ export class NaviAdapter extends BaseFlashLoanAdapter {
 
     // Repay the flash loan
     // Based on Navi SDK implementation: flash_repay_with_ctx
-    tx.moveCall({
+    // IMPORTANT: This function returns Balance<CoinType> representing the remaining balance after repayment
+    const remainingBalance = tx.moveCall({
       target: `${config.NAVI.PACKAGE}::lending::flash_repay_with_ctx`,
       arguments: [
         tx.object("0x06"), // Clock
@@ -79,6 +74,18 @@ export class NaviAdapter extends BaseFlashLoanAdapter {
       ],
       typeArguments: [node.params.asset],
     });
+
+    // Convert remaining balance back to Coin
+    // This handles any leftover funds after paying the flash loan fee
+    const remainingCoin = tx.moveCall({
+      target: "0x2::coin::from_balance",
+      arguments: [remainingBalance],
+      typeArguments: [node.params.asset],
+    });
+
+    // Merge the remaining coin back into the gas coin to avoid UnusedValueWithoutDrop error
+    // This returns any leftover funds to the sender
+    tx.mergeCoins(tx.gas, [remainingCoin]);
   }
 
   /**

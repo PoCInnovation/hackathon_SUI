@@ -52,28 +52,26 @@ export class TransactionBuilder {
   private flashLoanAdapters: Map<string, FlashLoanAdapter>;
   private dexAdapters: Map<string, DexAdapter>;
 
-  constructor(
-    private readonly network: "mainnet" | "testnet" = "testnet"
-  ) {
+  constructor() {
     this.tx = new Transaction();
     this.resultCache = new Map();
     this.swapEstimateCache = new Map();
 
-    // Initialize adapters
+    // Initialize adapters (Mainnet only)
     this.flashLoanAdapters = new Map([
-      ["NAVI", new NaviAdapter(network)],
+      ["NAVI", new NaviAdapter()],
       // Add more flash loan adapters here
-      // ["DEEPBOOK_V3", new DeepBookV3Adapter(network)],
-      // ["SCALLOP", new ScallopAdapter(network)],
-      // ["BUCKET", new BucketAdapter(network)],
+      // ["DEEPBOOK_V3", new DeepBookV3Adapter()],
+      // ["SCALLOP", new ScallopAdapter()],
+      // ["BUCKET", new BucketAdapter()],
     ]);
 
     this.dexAdapters = new Map([
-      ["CETUS", new CetusAdapter(network)],
+      ["CETUS", new CetusAdapter()],
       // Add more DEX adapters here
-      // ["DEEPBOOK_V3", new DeepBookV3DexAdapter(network)],
-      // ["TURBOS", new TurbosAdapter(network)],
-      // ["AFTERMATH_ROUTER", new AftermathAdapter(network)],
+      // ["DEEPBOOK_V3", new DeepBookV3DexAdapter()],
+      // ["TURBOS", new TurbosAdapter()],
+      // ["AFTERMATH_ROUTER", new AftermathAdapter()],
     ]);
   }
 
@@ -234,16 +232,27 @@ export class TransactionBuilder {
    */
   private addCoinSplit(node: CoinSplitNode): void {
     // Resolve input coin
-    const coin = this.resolveReference(node.inputs.coin);
+    let coin;
+    if (node.inputs.coin === "GAS") {
+      coin = this.tx.gas;
+    } else {
+      coin = this.resolveReference(node.inputs.coin);
+    }
 
     // Split coins
     const amounts = node.params.amounts.map((a) => BigInt(a));
-    const splitCoins = this.tx.splitCoins(coin, amounts.map((a) => this.tx.pure.u64(a)));
 
-    // Cache results
-    node.outputs.forEach((output, index) => {
-      this.resultCache.set(`${node.id}.${output.id}`, splitCoins[index]);
-    });
+    // tx.splitCoins returns a single coin when there's only one amount,
+    // or an array when there are multiple amounts
+    if (amounts.length === 1) {
+      const splitCoin = this.tx.splitCoins(coin, [this.tx.pure.u64(amounts[0])]);
+      this.resultCache.set(`${node.id}.${node.outputs[0].id}`, splitCoin);
+    } else {
+      const splitCoins = this.tx.splitCoins(coin, amounts.map((a) => this.tx.pure.u64(a)));
+      node.outputs.forEach((output, index) => {
+        this.resultCache.set(`${node.id}.${output.id}`, splitCoins[index]);
+      });
+    }
   }
 
   /**
