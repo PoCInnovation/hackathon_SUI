@@ -6,7 +6,7 @@ import { Strategy } from '../../types/strategy';
 const router = Router();
 
 // Initialize simulator with Testnet by default (can be configured via env)
-const simulator = new Simulator('mainnet'); // Using mainnet for real simulation as per previous test
+const simulator = new Simulator('testnet'); // Using testnet as default for testing
 
 router.post('/simulate', async (req: Request, res: Response): Promise<void> => {
   try {
