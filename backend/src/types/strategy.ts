@@ -234,11 +234,12 @@ export interface CustomNodeParams {
 }
 
 export interface CustomArgument {
-  type: "pure" | "object" | "input";  // Argument type
-  value?: string | number | boolean;  // For "pure" type
+  type: "pure" | "object" | "shared_object" | "input";  // Argument type
+  value?: string | number | boolean;  // For "pure" type and "shared_object" (object ID)
   input_ref?: string;                 // For "input" type (reference to another node)
   object_id?: string;                 // For "object" type (on-chain object)
   value_type?: string;                // Type annotation (e.g., "u64", "address")
+  mutable?: boolean;                  // For "shared_object" type
 }
 
 // ----------------------------------------------------------------------------

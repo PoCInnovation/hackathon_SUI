@@ -319,6 +319,13 @@ export class TransactionBuilder {
           args.push(this.tx.object(arg.object_id!));
           break;
 
+        case "shared_object":
+          // Shared object reference (mutable or immutable)
+          // For shared objects, we can pass the ID directly to tx.object()
+          // The SDK handles the shared object resolution automatically
+          args.push(this.tx.object(arg.value as string));
+          break;
+
         case "input":
           // Reference to another node's output
           const resolved = this.resolveReference(arg.input_ref!);

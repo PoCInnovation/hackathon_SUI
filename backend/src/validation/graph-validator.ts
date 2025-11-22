@@ -394,6 +394,7 @@ export class GraphValidator {
       case "DEX_SWAP":
       case "COIN_SPLIT":
       case "COIN_MERGE":
+      case "CUSTOM":
         return node.outputs.some((o) => o.id === outputId);
       case "FLASH_REPAY":
         return false; // Repay nodes have no outputs

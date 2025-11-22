@@ -211,11 +211,12 @@ export const CoinMergeNodeSchema = BaseNodeSchema.extend({
 
 // Custom Node
 export const CustomArgumentSchema = z.object({
-  type: z.enum(["pure", "object", "input"]),
+  type: z.enum(["pure", "object", "shared_object", "input"]),
   value: z.union([z.string(), z.number(), z.boolean()]).optional(),
   input_ref: z.string().optional(),
   object_id: z.string().optional(),
   value_type: z.string().optional(),
+  mutable: z.boolean().optional(),
 });
 
 export const CustomNodeParamsSchema = z.object({
