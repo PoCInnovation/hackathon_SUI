@@ -1,11 +1,9 @@
 import { Router, Request, Response } from 'express';
 import type { Router as ExpressRouter } from 'express';
 import { SuiClient, getFullnodeUrl } from '@mysten/sui/client';
-import { Transaction } from '@mysten/sui/transactions';
 import { SealWalrusService } from '../../services/SealWalrusService';
 import { Strategy } from '../../types/strategy';
 import { SessionKey } from '@mysten/seal';
-import { getAdminKeypair, ADMIN_CONFIG } from '../../config/admin';
 
 const router: ExpressRouter = Router();
 
@@ -77,7 +75,6 @@ router.post('/workflows/upload', async (req: Request, res: Response) => {
         workflowId: strategy.id,
         metadataBlobId: result.metadataBlobId,
         dataBlobId: result.dataBlobId,
-        price_sui: strategy.meta.price_sui || 0.1,
         walrusUrls: {
           metadata: `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${result.metadataBlobId}`,
           data: `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${result.dataBlobId}`,
@@ -107,7 +104,6 @@ router.get('/workflows/list', async (req: Request, res: Response) => {
       author: w.strategy.meta.author,
       description: w.strategy.meta.description,
       tags: w.strategy.meta.tags,
-      price_sui: w.strategy.meta.price_sui || 0,
       created_at: w.strategy.meta.created_at,
       purchaseCount: w.purchasedBy.length,
       createdAt: w.createdAt,
@@ -128,7 +124,7 @@ router.get('/workflows/list', async (req: Request, res: Response) => {
 
 /**
  * POST /api/workflows/purchase
- * Acheter un workflow (ajouter l'adresse à la whitelist ON-CHAIN automatiquement)
+ * Marquer un workflow comme acheté (l'utilisateur doit déjà être dans la whitelist)
  * Body: { workflowId, address }
  */
 router.post('/workflows/purchase', async (req: Request, res: Response) => {
@@ -156,82 +152,20 @@ router.post('/workflows/purchase', async (req: Request, res: Response) => {
     }
 
     console.log('🛒 Processing purchase for workflow:', workflowId);
-    console.log('   Adding address to whitelist:', address);
+    console.log('   User:', address);
+    console.log('   Note: User should already be in whitelist (paid 0.5 SUI)');
 
-    // Récupérer les métadonnées pour obtenir whitelistId et nonce
-    const metadata = await sealWalrusService.getMetadata(workflow.metadataBlobId);
-    
-    // Construire l'ID pour la whitelist
-    const { fromHex } = await import('@mysten/sui/utils');
-    const cleanWhitelistId = metadata.whitelistId.startsWith('0x') 
-      ? metadata.whitelistId.slice(2) 
-      : metadata.whitelistId;
-    const whitelistIdBytes = fromHex(cleanWhitelistId);
-    const nonceBytes = new TextEncoder().encode(metadata.nonce);
-    const idBytes = new Uint8Array([...whitelistIdBytes, ...nonceBytes]);
+    // Marquer comme acheté
+    workflow.purchasedBy.push(address);
 
-    // Ajouter l'utilisateur à la whitelist ON-CHAIN avec le wallet admin
-    const adminKeypair = getAdminKeypair();
-    
-    if (!adminKeypair) {
-      return res.status(500).json({
-        error: 'Admin wallet not configured. Please set ADMIN_PRIVATE_KEY in .env',
-      });
-    }
-
-    try {
-      console.log('🔐 Adding user to on-chain whitelist...');
-      
-      // Build transaction to add user to whitelist
-      const tx = new Transaction();
-      tx.moveCall({
-        target: `${ADMIN_CONFIG.PACKAGE_ID}::whitelist::add`,
-        arguments: [
-          tx.object(ADMIN_CONFIG.WHITELIST_ID),
-          tx.object(ADMIN_CONFIG.CAP_ID),
-          tx.pure.address(address),
-        ],
-      });
-
-      // Sign and execute with admin wallet
-      const result = await suiClient.signAndExecuteTransaction({
-        signer: adminKeypair,
-        transaction: tx,
-      });
-
-      console.log('✅ User added to whitelist. TX:', result.digest);
-
-      // Ajouter l'adresse à notre liste locale
-      workflow.purchasedBy.push(address);
-
-      res.json({
-        success: true,
-        data: {
-          workflowId: workflow.id,
-          metadataBlobId: workflow.metadataBlobId,
-          message: 'Workflow purchased and access granted',
-          transactionDigest: result.digest,
-        },
-      });
-    } catch (txError: any) {
-      console.error('❌ Failed to add user to whitelist:', txError);
-      
-      // Check if error is because user is already in whitelist
-      if (txError.message?.includes('EDuplicate') || txError.message?.includes('3')) {
-        // User already in whitelist, just add to local list
-        workflow.purchasedBy.push(address);
-        return res.json({
-          success: true,
-          data: {
-            workflowId: workflow.id,
-            metadataBlobId: workflow.metadataBlobId,
-            message: 'Workflow purchased (already in whitelist)',
-          },
-        });
-      }
-      
-      throw new Error(`Failed to add to whitelist: ${txError.message}`);
-    }
+    res.json({
+      success: true,
+      data: {
+        workflowId: workflow.id,
+        metadataBlobId: workflow.metadataBlobId,
+        message: 'Workflow purchased successfully. You can now decrypt it.',
+      },
+    });
   } catch (error: any) {
     console.error('Workflow purchase error:', error);
     res.status(500).json({
@@ -244,6 +178,7 @@ router.post('/workflows/purchase', async (req: Request, res: Response) => {
 /**
  * POST /api/workflows/get-decrypt-message
  * Obtenir le message à signer pour décrypter un workflow
+ * Note: L'utilisateur doit être dans la whitelist (avoir payé 0.5 SUI)
  */
 router.post('/workflows/get-decrypt-message', async (req: Request, res: Response) => {
   try {
@@ -268,6 +203,10 @@ router.post('/workflows/get-decrypt-message', async (req: Request, res: Response
         error: 'You must purchase this workflow first',
       });
     }
+
+    console.log('🔑 Creating session key for decrypt...');
+    console.log('   User:', address);
+    console.log('   Note: Seal will verify whitelist on-chain during decrypt');
 
     // Créer une session key pour le decrypt
     const sessionKey = await sealWalrusService.createSessionKey(address);

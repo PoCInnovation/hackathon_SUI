@@ -7,10 +7,34 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 
 export function MarketplaceSection() {
   const { workflows, loading, error } = useWorkflows();
-  const { purchaseWorkflow, decryptWorkflow } = useWorkflowActions();
+  const { purchaseWorkflow, decryptWorkflow, payForWhitelist } = useWorkflowActions();
   const currentAccount = useCurrentAccount();
   const [purchasing, setPurchasing] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [payingWhitelist, setPayingWhitelist] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+
+  const handleWhitelistPayment = async () => {
+    if (!currentAccount) {
+      setMessage({ type: 'error', text: 'Please connect your wallet first' });
+      return;
+    }
+
+    setPayingWhitelist(true);
+    setMessage(null);
+
+    try {
+      await payForWhitelist();
+      
+      setMessage({ 
+        type: 'success', 
+        text: 'Successfully added to whitelist! You can now purchase workflows.' 
+      });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message });
+    } finally {
+      setPayingWhitelist(false);
+    }
+  };
 
   const handlePurchase = async (workflowId: string) => {
     if (!currentAccount) {
@@ -22,15 +46,15 @@ export function MarketplaceSection() {
     setMessage(null);
 
     try {
-      // Acheter le workflow
+      // Acheter le workflow (juste marque comme possédé)
       await purchaseWorkflow(workflowId);
       
-      setMessage({ 
-        type: 'success', 
-        text: 'Workflow purchased! Decrypting... (check wallet for signature request)' 
+      setMessage({
+        type: 'success',
+        text: 'Downloading workflow... (check wallet for signature request)'
       });
 
-      // Décrypter et sauvegarder dans localStorage
+      // Décrypter et sauvegarder dans localStorage (seal_approve vérifie whitelist)
       const decryptedWorkflow = await decryptWorkflow(workflowId);
       
       // Récupérer les workflows existants
@@ -41,12 +65,20 @@ export function MarketplaceSection() {
       workflows.push(decryptedWorkflow);
       localStorage.setItem('purchased_workflows', JSON.stringify(workflows));
 
-      setMessage({ 
-        type: 'success', 
-        text: 'Workflow purchased and saved to your templates!' 
+      setMessage({
+        type: 'success',
+        text: 'Workflow downloaded and saved to your templates!'
       });
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message });
+      // Check if error is about whitelist
+      if (err.message?.includes('whitelist') || err.message?.includes('not authorized')) {
+        setMessage({ 
+          type: 'error', 
+          text: 'You must be in the whitelist to decrypt workflows. Please pay 0.5 SUI first.' 
+        });
+      } else {
+        setMessage({ type: 'error', text: err.message });
+      }
     } finally {
       setPurchasing(null);
     }
@@ -101,14 +133,33 @@ export function MarketplaceSection() {
       transition={{ duration: 0.5 }}
     >
       <div className="space-y-6">
-        <h1 className="text-4xl md:text-6xl font-pixel text-white tracking-wider">
-          MARKETPLACE
-        </h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-4xl md:text-6xl font-pixel text-white tracking-wider">
+            MARKETPLACE
+          </h1>
+          
+          <button
+            onClick={handleWhitelistPayment}
+            disabled={payingWhitelist || !currentAccount}
+            className="px-6 py-3 bg-walrus-mint/20 border-4 border-walrus-mint hover:bg-walrus-mint hover:text-black transition-colors font-pixel text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {payingWhitelist ? 'PROCESSING...' : 'PAY 0.5 SUI FOR WHITELIST'}
+          </button>
+        </div>
+
+        <div className="bg-walrus-mint/10 border-2 border-walrus-mint/40 p-4">
+          <p className="text-white/80 text-xs font-mono">
+            ℹ️ To purchase and decrypt workflows, you must first pay 0.5 SUI to join the whitelist.
+            This is a one-time payment that gives you access to decrypt all workflows you purchase.
+          </p>
+        </div>
 
         {message && (
           <div className={`p-4 border-4 ${
             message.type === 'success' 
               ? 'bg-green-500/10 border-green-500/40' 
+              : message.type === 'info'
+              ? 'bg-blue-500/10 border-blue-500/40'
               : 'bg-red-500/10 border-red-500/40'
           }`}>
             <p className="text-white font-pixel text-sm">{message.text}</p>
@@ -161,17 +212,13 @@ export function MarketplaceSection() {
                     </p>
                   </div>
 
-                  <div className="flex justify-between items-center pt-4 border-t border-walrus-mint/20">
-                    <span className="text-2xl font-pixel text-walrus-mint">
-                      {workflow.price_sui} SUI
-                    </span>
-                    
+                  <div className="flex justify-end items-center pt-4 border-t border-walrus-mint/20">
                     <button
                       onClick={() => handlePurchase(workflow.id)}
                       disabled={purchasing === workflow.id}
-                      className="px-4 py-2 bg-walrus-mint/20 border-2 border-walrus-mint hover:bg-walrus-mint hover:text-black transition-colors font-pixel text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-2 bg-walrus-mint/20 border-2 border-walrus-mint hover:bg-walrus-mint hover:text-black transition-colors font-pixel text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {purchasing === workflow.id ? 'BUYING...' : 'BUY'}
+                      {purchasing === workflow.id ? 'DOWNLOADING...' : 'DOWNLOAD FREE'}
                     </button>
                   </div>
                 </motion.div>

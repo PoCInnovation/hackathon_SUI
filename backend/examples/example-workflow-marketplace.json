@@ -7,8 +7,7 @@
     "description": "A simple flash loan arbitrage strategy between Cetus and DeepBook V3. Borrows SUI from NAVI, swaps on Cetus, swaps back on DeepBook, and repays the loan.",
     "created_at": 1700000000000,
     "updated_at": 1700000000000,
-    "tags": ["arbitrage", "flashloan", "cetus", "deepbook", "sui", "usdc"],
-    "price_sui": 5
+    "tags": ["arbitrage", "flashloan", "cetus", "deepbook", "sui", "usdc"]
   },
   "nodes": [
     {
