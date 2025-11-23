@@ -32,7 +32,12 @@ router.post('/build', async (req: Request, res: Response): Promise<void> => {
 
     // Get reference gas price
     const rgp = await client.getReferenceGasPrice();
-    tx.setGasPrice(rgp);
+    console.log('Fetched RGP from Mainnet:', rgp);
+
+    // Force gas price to be at least 1000 MIST (Mainnet minimum) to avoid 505 error
+    const gasPrice = rgp > 1000n ? rgp : 1000n;
+    tx.setGasPrice(gasPrice);
+    console.log('Setting transaction gas price to:', gasPrice);
 
     // Serialize the transaction to bytes
     const txBytes = await tx.build({

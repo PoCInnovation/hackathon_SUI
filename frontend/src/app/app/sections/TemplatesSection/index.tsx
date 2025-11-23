@@ -90,6 +90,12 @@ export function TemplatesSection() {
       return;
     }
 
+    // Check network
+    // Note: We assume Mainnet is 'sui:mainnet'
+    // You might need to import useCurrentWallet or similar to get the chain
+    // For now, we'll rely on the user checking their wallet, but we can add a console log
+    console.log("Current account:", currentAccount);
+
     try {
       // 1. Build transaction
       const buildRes = await api.buildTransaction(selectedTemplate, currentAccount.address);
