@@ -7,7 +7,8 @@ services:
       - "8000:3000"
     environment:
       - PORT=3000
-      # Add other environment variables here if needed
+    env_file:
+      - .env
     restart: unless-stopped
 
   frontend:
@@ -18,6 +19,8 @@ services:
       - "3000:3000" # Map host 3000 to container 3000 (Next.js default)
     environment:
       - WATCHPACK_POLLING=true
+    env_file:
+      - .env
     volumes:
       - ./frontend:/app
       - /app/node_modules
