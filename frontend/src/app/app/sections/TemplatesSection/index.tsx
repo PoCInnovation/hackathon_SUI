@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { ExecutionConsole, Log, ExecutionStatus } from "./components/ExecutionConsole";
+import { ExecutionSteps } from "./components/ExecutionSteps";
 import { Transaction } from "@mysten/sui/transactions";
 import { Play, Edit, Trash2, Upload, Copy, Layers, Calendar, User, X, GripVertical, Loader2 } from "lucide-react";
 import type { Strategy } from "@/hooks/useWorkflows";
@@ -140,11 +141,19 @@ export function TemplatesSection() {
           onSuccess: (result) => {
             console.log("Transaction executed:", result);
             console.log(`SuiScan URL: https://suiscan.xyz/mainnet/tx/${result.digest}`);
-            setExecutionStatus('success');
-            setTxDigest(result.digest);
-            addLog("Transaction submitted to the network!", 'success');
-            addLog(`Digest: ${result.digest}`, 'success');
-            addLog("Execution completed successfully.", 'success');
+            
+            // Set executing status briefly before success
+            setExecutionStatus('executing');
+            addLog("Executing transaction on Sui Mainnet...", 'info');
+            
+            // Small delay to show executing state
+            setTimeout(() => {
+              setExecutionStatus('success');
+              setTxDigest(result.digest);
+              addLog("Transaction submitted to the network!", 'success');
+              addLog(`Digest: ${result.digest}`, 'success');
+              addLog("Execution completed successfully.", 'success');
+            }, 500);
           },
           onError: (error) => {
             console.error("Execution failed:", error);
@@ -358,24 +367,7 @@ export function TemplatesSection() {
               {/* Panel Content */}
               <div className="flex-1 overflow-y-auto p-8 custom-scrollbar flex flex-col gap-8 relative z-10">
                 
-                {/* Execution Console (Visible when active) */}
-                <AnimatePresence>
-                  {executionStatus !== 'idle' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -20, height: 0 }}
-                      animate={{ opacity: 1, y: 0, height: 'auto' }}
-                      exit={{ opacity: 0, y: -20, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <ExecutionConsole 
-                        logs={executionLogs} 
-                        status={executionStatus} 
-                        txDigest={txDigest}
-                        onClose={() => setExecutionStatus('idle')}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+
 
                 {/* Description Box */}
                 <div className="relative group">
@@ -506,6 +498,25 @@ export function TemplatesSection() {
                     Delete Strategy
                   </button>
                 </div>
+
+                {/* Execution Steps in Footer */}
+                <AnimatePresence>
+                  {executionStatus !== 'idle' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: 'auto', marginTop: 24 }}
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <ExecutionSteps 
+                        logs={executionLogs} 
+                        status={executionStatus} 
+                        txDigest={txDigest}
+                        onClose={() => setExecutionStatus('idle')}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </>
