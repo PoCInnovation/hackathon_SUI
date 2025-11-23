@@ -38,8 +38,17 @@ export default function AppLayout({
     // Determine if we have a persisted wallet session (cookie or dapp-kit localStorage)
     // dapp-kit stores wallet info in localStorage with various keys, so we check our cookie
     const hasSession = typeof window !== 'undefined' && getWalletCookie();
-    // Shorter loading: 0.5s if session, 0.1s otherwise
-    const loadingDuration = hasSession ? 500 : 100;
+    // Check if coming from OAuth redirect (URL contains 'id_token' or similar OAuth params)
+    const isOAuthRedirect = typeof window !== 'undefined' && 
+      (window.location.href.includes('id_token') || 
+       window.location.href.includes('code=') ||
+       window.location.hash.includes('id_token'));
+    
+    // Adjust loading duration based on context
+    // - 1000ms if OAuth redirect (wait for Enoki to finalize auth)
+    // - 500ms if session exists
+    // - 100ms otherwise
+    const loadingDuration = isOAuthRedirect ? 1000 : (hasSession ? 500 : 100);
 
     const timer = setTimeout(() => {
       setIsLoading(false);
