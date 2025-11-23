@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, ChevronDown, ExternalLink, AlertCircle, Terminal, Minimize2, Maximize2 } from "lucide-react";
 import { useState } from "react";
-import { Log, ExecutionStatus } from "./ExecutionConsole"; // Re-using types
+import { Log, ExecutionStatus } from "./types";
 
 interface ExecutionStepsProps {
   logs: Log[];

@@ -1,16 +1,11 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Terminal, CheckCircle, XCircle, Loader2, ExternalLink, X } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { Log, ExecutionStatus } from "./types";
 
-export interface Log {
-  timestamp: number;
-  message: string;
-  type: 'info' | 'success' | 'error' | 'warning';
-}
-
-export type ExecutionStatus = 'idle' | 'building' | 'signing' | 'executing' | 'success' | 'error';
+export type { Log, ExecutionStatus };
 
 interface ExecutionConsoleProps {
   logs: Log[];

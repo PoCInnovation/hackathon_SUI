@@ -198,11 +198,13 @@ export function AppSidebar({ activeSection, onSectionChange, onExpandedChange }:
                     primary={item.label}
                     primaryTypographyProps={{
                       sx: {
-                        fontFamily: '"Press Start 2P", monospace',
-                        fontSize: '0.65rem',
+                        fontFamily: 'monospace',
+                        fontSize: '0.75rem',
                         letterSpacing: '0.05em',
+                        fontWeight: '600',
                         color: activeSection === item.id ? '#3b82f6' : 'rgba(255, 255, 255, 0.8)',
                         whiteSpace: 'nowrap',
+                        textTransform: 'uppercase',
                       },
                     }}
                   />

@@ -86,55 +86,45 @@ export function MarketplaceSection() {
 
   if (loading) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="space-y-6">
-          <h1 className="text-4xl md:text-6xl font-pixel text-white tracking-wider">
-            MARKETPLACE
-          </h1>
-          <div className="pt-8">
-            <div className="bg-walrus-mint/10 border-4 border-walrus-mint/40 p-8">
-              <p className="text-white font-pixel text-sm">LOADING...</p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <div>
+        <div className="mb-8">
+        <h1 className="text-4xl font-pixel text-white tracking-wider mb-2">
+          MARKETPLACE
+        </h1>
+        <p className="text-gray-500 font-mono text-sm">
+          Discover and download DeFi strategies
+        </p>
+      </div>
+      <div className="bg-walrus-mint/10 border-4 border-walrus-mint/40 p-8">
+        <p className="text-white font-pixel text-sm">LOADING...</p>
+      </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="space-y-6">
-          <h1 className="text-4xl md:text-6xl font-pixel text-white tracking-wider">
-            MARKETPLACE
-          </h1>
-          <div className="pt-8">
-            <div className="bg-red-500/10 border-4 border-red-500/40 p-8">
-              <p className="text-white font-pixel text-sm">ERROR: {error}</p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <div>
+        <div className="mb-8">
+        <h1 className="text-4xl font-pixel text-white tracking-wider mb-2">
+          MARKETPLACE
+        </h1>
+        <p className="text-gray-500 font-mono text-sm">
+          Discover and download DeFi strategies
+        </p>
+      </div>
+      <div className="bg-red-500/10 border-4 border-red-500/40 p-8">
+        <p className="text-white font-pixel text-sm">ERROR: {error}</p>
+      </div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-4xl md:text-6xl font-pixel text-white tracking-wider">
+    <div>
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-2">
+          <h1 className="text-4xl font-pixel text-white tracking-wider">
             MARKETPLACE
           </h1>
           
@@ -146,8 +136,12 @@ export function MarketplaceSection() {
             {payingWhitelist ? 'PROCESSING...' : 'PAY 0.5 SUI FOR WHITELIST'}
           </button>
         </div>
+        <p className="text-gray-500 font-mono text-sm">
+          Discover and download DeFi strategies
+        </p>
+      </div>
 
-        <div className="bg-walrus-mint/10 border-2 border-walrus-mint/40 p-4">
+      <div className="bg-walrus-mint/10 border-2 border-walrus-mint/40 p-4 mb-6">
           <p className="text-white/80 text-xs font-mono">
             ℹ️ To purchase and decrypt workflows, you must first pay 0.5 SUI to join the whitelist.
             This is a one-time payment that gives you access to decrypt all workflows you purchase.
@@ -166,7 +160,7 @@ export function MarketplaceSection() {
           </div>
         )}
 
-        <div className="pt-8">
+        <div>
           {workflows.length === 0 ? (
             <div className="bg-walrus-mint/10 border-4 border-walrus-mint/40 p-8">
               <p className="text-white font-pixel text-sm">
@@ -226,7 +220,6 @@ export function MarketplaceSection() {
             </div>
           )}
         </div>
-      </div>
-    </motion.div>
+    </div>
   );
 }

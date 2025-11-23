@@ -175,9 +175,10 @@ export default function AppLayout({
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
-            pt: '80px', // TopBar height + padding
-            ml: '80px', // Mini sidebar width
+            m: 0,
+            px: 7,
+            py: 7,
+            pt: 'calc(80px + 24px + 24px)', // TopBar height + padding
             backgroundImage: `
               linear-gradient(rgba(59, 130, 246, 0.02) 1px, transparent 1px),
               linear-gradient(90deg, rgba(59, 130, 246, 0.02) 1px, transparent 1px)

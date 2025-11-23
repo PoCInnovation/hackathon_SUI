@@ -28,3 +28,4 @@ export const BLOCK_TYPES: BlockTypeDef[] = [
   { type: "flash_repay", label: "FLASH REPAY", indicator: "bg-emerald-600", icon: ArrowDownLeft },
 ];
 
+

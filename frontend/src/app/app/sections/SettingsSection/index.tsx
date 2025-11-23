@@ -4,23 +4,20 @@ import { motion } from "framer-motion";
 
 export function SettingsSection() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="space-y-6">
-        <h1 className="text-4xl md:text-6xl font-pixel text-white tracking-wider">
+    <div className="h-full flex flex-col">
+      <div className="mb-8">
+        <h1 className="text-4xl font-pixel text-white tracking-wider mb-2">
           SETTINGS
         </h1>
-        <div className="pt-8">
-          <div className="bg-walrus-mint/10 border-4 border-walrus-mint/40 p-8">
-            <p className="text-white font-pixel text-sm">
-              SETTINGS COMING SOON
-            </p>
-          </div>
-        </div>
+        <p className="text-gray-500 font-mono text-sm">
+          Configure your preferences and account
+        </p>
       </div>
-    </motion.div>
+      <div className="bg-walrus-mint/10 border-4 border-walrus-mint/40 p-8">
+        <p className="text-white font-pixel text-sm">
+          SETTINGS COMING SOON
+        </p>
+      </div>
+    </div>
   );
 }

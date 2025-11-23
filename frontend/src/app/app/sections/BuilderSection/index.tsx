@@ -148,13 +148,23 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
   };
 
 
+
   return (
-    <Box className="h-full mt-12 flex flex-col gap-6">
+    <Box className="h-full flex flex-col gap-6">
+      {/* Section Title */}
+      <div className="mb-4">
+        <h1 className="text-4xl font-pixel text-white tracking-wider mb-2">
+          STRATEGY BUILDER
+        </h1>
+        <p className="text-gray-500 font-mono text-sm">
+          Design and simulate your DeFi strategies
+        </p>
+      </div>
+
       <BuilderHeader
         onClear={handleClear}
         onRunSimulation={runSimulation}
         onSave={handleSaveClick}
-        onPublish={handlePublishClick}
         isSimulating={isSimulating}
         hasBlocks={blocks.length > 0}
         simulationSuccess={!!simulationResult}

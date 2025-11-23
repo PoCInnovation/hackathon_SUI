@@ -104,3 +104,4 @@ export function Canvas({ blocks, tokenMap, onRemoveBlock, onUpdateBlockParam }: 
     </div>
   );
 }
+
