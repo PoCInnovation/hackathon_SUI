@@ -234,11 +234,11 @@ export interface CustomNodeParams {
 }
 
 export interface CustomArgument {
-  type: "pure" | "object" | "shared_object" | "input";  // Argument type
+  type: "pure" | "object" | "shared_object" | "input" | "make_vec";  // Argument type
   value?: string | number | boolean;  // For "pure" type and "shared_object" (object ID)
-  input_ref?: string;                 // For "input" type (reference to another node)
+  input_ref?: string;                 // For "input" and "make_vec" types (reference to another node)
   object_id?: string;                 // For "object" type (on-chain object)
-  value_type?: string;                // Type annotation (e.g., "u64", "address")
+  value_type?: string;                // Type annotation (e.g., "u64", "address", "0x2::coin::Coin<T>")
   mutable?: boolean;                  // For "shared_object" type
 }
 

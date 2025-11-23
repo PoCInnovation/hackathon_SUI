@@ -211,7 +211,7 @@ export const CoinMergeNodeSchema = BaseNodeSchema.extend({
 
 // Custom Node
 export const CustomArgumentSchema = z.object({
-  type: z.enum(["pure", "object", "shared_object", "input"]),
+  type: z.enum(["pure", "object", "shared_object", "input", "make_vec"]),
   value: z.union([z.string(), z.number(), z.boolean()]).optional(),
   input_ref: z.string().optional(),
   object_id: z.string().optional(),

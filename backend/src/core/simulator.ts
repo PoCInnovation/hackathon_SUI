@@ -59,8 +59,9 @@ export class Simulator {
       // (or we could assume the builder attached them to the node objects if we modified it, but we didn't).
 
       // 2. Execute Dry Run
-      // Don't set explicit gas budget - let it auto-calculate based on actual gas needed
-      // This prevents validation errors when the sender has limited balance
+      // Set a high gas budget for simulation to avoid "could not determine budget" errors
+      // The dry run will show actual gas needed regardless of this value
+      tx.setGasBudget(1000000000); // 1 SUI max gas budget for simulation
 
       const txBytes = await tx.build({ client: this.client });
 
@@ -112,16 +113,18 @@ export class Simulator {
         // Transaction failed
         result.success = false;
         const errorMsg = dryRunResult.effects.status.error || "Unknown error";
-        const userMessage = this.parseExecutionError(errorMsg);
+        console.error("Dry run failed with error:", errorMsg);
+        // For debugging, return raw error
         result.errors.push({
           rule_id: "dry_run_failed",
           severity: "ERROR",
-          message: userMessage,
+          message: errorMsg,
         });
       }
 
     } catch (error: any) {
       result.success = false;
+      console.error("Simulation error details:", error);
       const userMessage = this.parseExecutionError(error.message || "An unexpected error occurred during simulation");
       result.errors.push({
         rule_id: "simulation_error",

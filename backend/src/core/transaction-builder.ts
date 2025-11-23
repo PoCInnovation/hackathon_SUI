@@ -331,24 +331,43 @@ export class TransactionBuilder {
           const resolved = this.resolveReference(arg.input_ref!);
           args.push(resolved);
           break;
+
+        case "make_vec":
+          // Create a vector containing a single coin/object
+          // This is used when a function expects vector<Coin<T>> instead of Coin<T>
+          const coinRef = this.resolveReference(arg.input_ref!);
+          args.push(this.tx.makeMoveVec({ elements: [coinRef], type: arg.value_type! }));
+          break;
       }
     }
 
-    // Make the Move call
-    const result = this.tx.moveCall({
-      target: node.params.target,
-      arguments: args,
-      typeArguments: node.params.type_arguments || [],
-    });
-
-    // Cache outputs
-    // If the function returns multiple values, they will be in an array
-    if (node.outputs.length === 1) {
+    // Make the Move call and cache outputs
+    if (node.outputs.length === 0) {
+      // No outputs - just make the call
+      this.tx.moveCall({
+        target: node.params.target,
+        arguments: args,
+        typeArguments: node.params.type_arguments || [],
+      });
+    } else if (node.outputs.length === 1) {
+      const result = this.tx.moveCall({
+        target: node.params.target,
+        arguments: args,
+        typeArguments: node.params.type_arguments || [],
+      });
       this.resultCache.set(`${node.id}.${node.outputs[0].id}`, result);
     } else {
-      // Multiple outputs - destructure the result
+      // Multiple outputs - use destructuring to get each return value
+      // When a Move function returns (A, B), tx.moveCall() returns them as array elements that can be destructured
+      const results = this.tx.moveCall({
+        target: node.params.target,
+        arguments: args,
+        typeArguments: node.params.type_arguments || [],
+      });
+
+      // Cache each output by destructuring the result array
       node.outputs.forEach((output, index) => {
-        this.resultCache.set(`${node.id}.${output.id}`, (result as any)[index]);
+        this.resultCache.set(`${node.id}.${output.id}`, results[index]);
       });
     }
   }

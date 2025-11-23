@@ -1,0 +1,351 @@
+{
+  "sender": "0x3c7ea737b5f0390399892c70e899498f819e7593eabad27466acfc59fedb979d",
+  "strategy": {
+    "id": "123e4567-e89b-12d3-a456-426614174004",
+    "version": "1.0.0",
+    "meta": {
+      "name": "Turbos Simple Round-Trip Test",
+      "author": "0x3c7ea737b5f0390399892c70e899498f819e7593eabad27466acfc59fedb979d",
+      "description": "Flash loan SUI -> Swap to USDC -> Swap back to SUI -> Merge all SUI -> Repay",
+      "created_at": 1700000000000,
+      "updated_at": 1700000000000,
+      "tags": [
+        "test",
+        "turbos",
+        "flash-loan",
+        "simple"
+      ]
+    },
+    "nodes": [
+      {
+        "id": "borrow_1",
+        "type": "FLASH_BORROW",
+        "protocol": "NAVI",
+        "params": {
+          "asset": "0x2::sui::SUI",
+          "amount": "100000"
+        },
+        "outputs": [
+          {
+            "id": "coin_borrowed",
+            "type": "Coin<0x2::sui::SUI>",
+            "output_type": "COIN"
+          },
+          {
+            "id": "receipt",
+            "type": "FlashLoanReceipt",
+            "output_type": "RECEIPT"
+          }
+        ]
+      },
+      {
+        "id": "swap_1_sui_to_usdc",
+        "type": "CUSTOM",
+        "protocol": "CUSTOM",
+        "label": "Turbos Swap SUI→USDC",
+        "params": {
+          "target": "0xd02012c71c1a6a221e540c36c37c81e0224907fe1ee05bfe250025654ff17103::swap_router::swap_a_b_with_return_",
+          "arguments": [
+            {
+              "type": "object",
+              "object_id": "0x5eb2dfcdd1b15d2021328258f6d5ec081e9a0cdcfa9e13a0eaeb9b5f7505ca78"
+            },
+            {
+              "type": "make_vec",
+              "input_ref": "borrow_1.coin_borrowed",
+              "value_type": "0x2::coin::Coin<0x2::sui::SUI>"
+            },
+            {
+              "type": "pure",
+              "value": "100000",
+              "value_type": "u64"
+            },
+            {
+              "type": "pure",
+              "value": "0",
+              "value_type": "u64"
+            },
+            {
+              "type": "pure",
+              "value": "4295048016",
+              "value_type": "u128"
+            },
+            {
+              "type": "pure",
+              "value": true,
+              "value_type": "bool"
+            },
+            {
+              "type": "pure",
+              "value": "0x3c7ea737b5f0390399892c70e899498f819e7593eabad27466acfc59fedb979d",
+              "value_type": "address"
+            },
+            {
+              "type": "pure",
+              "value": "9999999999999",
+              "value_type": "u64"
+            },
+            {
+              "type": "object",
+              "object_id": "0x6"
+            },
+            {
+              "type": "object",
+              "object_id": "0xf1cf0e81048df168ebeb1b8030fad24b3e0b53ae827c25053fff0779c1445b6f"
+            }
+          ],
+          "type_arguments": [
+            "0x2::sui::SUI",
+            "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN",
+            "0x91bfbc386a41afcfd9b2533058d7e915a1d3829089cc268ff4333d54d6339ca1::fee3000bps::FEE3000BPS"
+          ]
+        },
+        "inputs": {
+          "coin_in": "borrow_1.coin_borrowed"
+        },
+        "outputs": [
+          {
+            "id": "usdc_out",
+            "type": "Coin<0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN>",
+            "output_type": "COIN"
+          },
+          {
+            "id": "sui_remainder",
+            "type": "Coin<0x2::sui::SUI>",
+            "output_type": "COIN"
+          }
+        ]
+      },
+      {
+        "id": "swap_2_usdc_to_sui",
+        "type": "CUSTOM",
+        "protocol": "CUSTOM",
+        "label": "Turbos Swap USDC→SUI",
+        "params": {
+          "target": "0xd02012c71c1a6a221e540c36c37c81e0224907fe1ee05bfe250025654ff17103::swap_router::swap_b_a_with_return_",
+          "arguments": [
+            {
+              "type": "object",
+              "object_id": "0x5eb2dfcdd1b15d2021328258f6d5ec081e9a0cdcfa9e13a0eaeb9b5f7505ca78"
+            },
+            {
+              "type": "make_vec",
+              "input_ref": "swap_1_sui_to_usdc.usdc_out",
+              "value_type": "0x2::coin::Coin<0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN>"
+            },
+            {
+              "type": "pure",
+              "value": "1",
+              "value_type": "u64"
+            },
+            {
+              "type": "pure",
+              "value": "0",
+              "value_type": "u64"
+            },
+            {
+              "type": "pure",
+              "value": "79226673515401279992447579055",
+              "value_type": "u128"
+            },
+            {
+              "type": "pure",
+              "value": false,
+              "value_type": "bool"
+            },
+            {
+              "type": "pure",
+              "value": "0x3c7ea737b5f0390399892c70e899498f819e7593eabad27466acfc59fedb979d",
+              "value_type": "address"
+            },
+            {
+              "type": "pure",
+              "value": "9999999999999",
+              "value_type": "u64"
+            },
+            {
+              "type": "object",
+              "object_id": "0x6"
+            },
+            {
+              "type": "object",
+              "object_id": "0xf1cf0e81048df168ebeb1b8030fad24b3e0b53ae827c25053fff0779c1445b6f"
+            }
+          ],
+          "type_arguments": [
+            "0x2::sui::SUI",
+            "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN",
+            "0x91bfbc386a41afcfd9b2533058d7e915a1d3829089cc268ff4333d54d6339ca1::fee3000bps::FEE3000BPS"
+          ]
+        },
+        "inputs": {
+          "coin_in": "swap_1_sui_to_usdc.usdc_out"
+        },
+        "outputs": [
+          {
+            "id": "sui_swapped_back",
+            "type": "Coin<0x2::sui::SUI>",
+            "output_type": "COIN"
+          },
+          {
+            "id": "usdc_remainder",
+            "type": "Coin<0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN>",
+            "output_type": "COIN"
+          }
+        ]
+      },
+      {
+        "id": "split_wallet_sui",
+        "type": "COIN_SPLIT",
+        "protocol": "NATIVE",
+        "params": {
+          "amounts": [
+            "10000000"
+          ]
+        },
+        "inputs": {
+          "coin": "GAS"
+        },
+        "outputs": [
+          {
+            "id": "wallet_sui",
+            "type": "Coin<0x2::sui::SUI>",
+            "output_type": "COIN"
+          }
+        ]
+      },
+      {
+        "id": "merge_all_sui",
+        "type": "COIN_MERGE",
+        "protocol": "NATIVE",
+        "params": {},
+        "inputs": {
+          "target_coin": "swap_2_usdc_to_sui.sui_swapped_back",
+          "merge_coins": [
+            "swap_1_sui_to_usdc.sui_remainder",
+            "split_wallet_sui.wallet_sui"
+          ]
+        },
+        "outputs": [
+          {
+            "id": "merged_sui",
+            "type": "Coin<0x2::sui::SUI>",
+            "output_type": "COIN"
+          }
+        ]
+      },
+      {
+        "id": "repay_1",
+        "type": "FLASH_REPAY",
+        "protocol": "NAVI",
+        "params": {
+          "asset": "0x2::sui::SUI"
+        },
+        "inputs": {
+          "coin_repay": "merge_all_sui.merged_sui",
+          "receipt": "borrow_1.receipt"
+        }
+      },
+      {
+        "id": "transfer_usdc",
+        "type": "CUSTOM",
+        "protocol": "CUSTOM",
+        "label": "Transfer USDC remainder",
+        "params": {
+          "target": "0x2::transfer::public_transfer",
+          "arguments": [
+            {
+              "type": "input",
+              "input_ref": "swap_2_usdc_to_sui.usdc_remainder"
+            },
+            {
+              "type": "pure",
+              "value": "0x3c7ea737b5f0390399892c70e899498f819e7593eabad27466acfc59fedb979d",
+              "value_type": "address"
+            }
+          ],
+          "type_arguments": [
+            "0x2::coin::Coin<0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN>"
+          ]
+        },
+        "inputs": {
+          "coin_in": "swap_2_usdc_to_sui.usdc_remainder"
+        },
+        "outputs": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "borrow_1",
+        "source_output": "coin_borrowed",
+        "target": "swap_1_sui_to_usdc",
+        "target_input": "coin_in",
+        "edge_type": "COIN",
+        "coin_type": "0x2::sui::SUI"
+      },
+      {
+        "id": "e2",
+        "source": "swap_1_sui_to_usdc",
+        "source_output": "usdc_out",
+        "target": "swap_2_usdc_to_sui",
+        "target_input": "coin_in",
+        "edge_type": "COIN",
+        "coin_type": "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
+      },
+      {
+        "id": "e3",
+        "source": "swap_1_sui_to_usdc",
+        "source_output": "sui_remainder",
+        "target": "merge_all_sui",
+        "target_input": "merge_coins",
+        "edge_type": "COIN",
+        "coin_type": "0x2::sui::SUI"
+      },
+      {
+        "id": "e4",
+        "source": "swap_2_usdc_to_sui",
+        "source_output": "sui_swapped_back",
+        "target": "merge_all_sui",
+        "target_input": "target_coin",
+        "edge_type": "COIN",
+        "coin_type": "0x2::sui::SUI"
+      },
+      {
+        "id": "e5",
+        "source": "split_wallet_sui",
+        "source_output": "wallet_sui",
+        "target": "merge_all_sui",
+        "target_input": "merge_coins",
+        "edge_type": "COIN",
+        "coin_type": "0x2::sui::SUI"
+      },
+      {
+        "id": "e6",
+        "source": "merge_all_sui",
+        "source_output": "merged_sui",
+        "target": "repay_1",
+        "target_input": "coin_repay",
+        "edge_type": "COIN",
+        "coin_type": "0x2::sui::SUI"
+      },
+      {
+        "id": "e7",
+        "source": "borrow_1",
+        "source_output": "receipt",
+        "target": "repay_1",
+        "target_input": "receipt",
+        "edge_type": "RECEIPT"
+      },
+      {
+        "id": "e8",
+        "source": "swap_2_usdc_to_sui",
+        "source_output": "usdc_remainder",
+        "target": "transfer_usdc",
+        "target_input": "coin_in",
+        "edge_type": "COIN",
+        "coin_type": "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
+      }
+    ]
+  }
+}
