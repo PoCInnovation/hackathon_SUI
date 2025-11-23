@@ -61,8 +61,6 @@ export class Simulator {
       // 2. Execute Dry Run
       // Set a high gas budget for simulation to avoid "could not determine budget" errors
       // The dry run will show actual gas needed regardless of this value
-      tx.setGasBudget(1000000000); // 1 SUI max gas budget for simulation
-
       const txBytes = await tx.build({ client: this.client });
 
       const dryRunResult = await this.client.dryRunTransactionBlock({
