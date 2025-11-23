@@ -162,7 +162,7 @@ Access the app at: `http://localhost:3000`
 2. Add nodes from the sidebar:
    - **Flash Borrow** (Navi Protocol)
    - **DEX Swap** (Cetus)
-   - **Custom Block** (Turbos or any Move call)
+   - **Custom Block** (anything)
    - **Coin Operations** (Merge/Split)
    - **Flash Repay** (Navi Protocol)
 3. Connect nodes by defining edges in the JSON
@@ -278,30 +278,6 @@ SAIL supports custom Move calls for advanced users. Example Turbos swap:
 - Use `Coin<T>` wrapper types for `public_transfer` calls
 - Edges must connect outputs to inputs for dependency tracking
 
-See `BLOCKS_REFERENCE.md` for complete documentation.
-
----
-
-## ⚠️ Warnings & Risks
-
-- **Market volatility**: Slippage and price changes can affect profitability
-- **No capital loss on failure**: Atomic transactions ensure all-or-nothing execution
-- **Testnet prototype**: Not audited, use at your own risk
-- **Network switching**: Ensure your wallet supports both Testnet and Mainnet
-- **Gas costs**: Mainnet execution requires real SUI for gas
-
----
-
-## 🤝 Contributing
-
-Pull requests are welcome! Areas for improvement:
-
-- New protocol adapters (Scallop, Bucket, DeepBook, Suilend, Bluefin)
-- UI/UX enhancements
-- Documentation
-- Testing coverage
-- Performance optimizations
-
 ---
 
 ## 📜 License
@@ -317,15 +293,3 @@ Distributed under the **MIT License**.
 **Team**: PoCInnovation
 
 **Technologies**: Sui, Walrus, Seal, Navi Protocol, Cetus, Turbos Finance
-
----
-
-## 📚 Additional Resources
-
-- [Blocks Reference](./BLOCKS_REFERENCE.md) - Complete node type documentation
-- [Implementation Summary](./IMPLEMENTATION_SUMMARY.md) - Technical deep dive
-- [Sui Documentation](https://docs.sui.io/)
-- [Walrus Documentation](https://docs.walrus.site/)
-- [Seal Documentation](https://docs.mystenlabs.com/seal/)
-- [Navi Protocol](https://naviprotocol.io/)
-- [Cetus Protocol](https://www.cetus.zone/)
