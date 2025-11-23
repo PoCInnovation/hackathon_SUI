@@ -10,10 +10,11 @@ import { Canvas } from "./components/Canvas";
 import { SimulationResults } from "./components/SimulationResults";
 import { BuilderHeader } from "./components/BuilderHeader";
 import { PublishModal } from "./components/PublishModal";
+import { JsonEditor } from "./components/JsonEditor";
 import { useWorkflowActions, Strategy } from "@/hooks/useWorkflows";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Snackbar, Alert } from "@mui/material";
+import { Snackbar, Alert, ToggleButton, ToggleButtonGroup } from "@mui/material";
 
 import { buildStrategyFromBlocks } from "./utils/strategyBuilder";
 import { SaveStrategyModal } from "./components/SaveStrategyModal";
@@ -31,6 +32,9 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
   const [publishing, setPublishing] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   
+  const [builderMode, setBuilderMode] = useState<'blocks' | 'json'>('blocks');
+  const [rawJson, setRawJson] = useState<string>("");
+
   const {
     blocks,
     simulationResult,
@@ -51,6 +55,8 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
     tokenMap,
     senderAddress: currentAccount?.address || "",
     onSuccess: setSimulationResult,
+    builderMode,
+    rawJson,
   });
 
   const handleClear = () => {
@@ -64,9 +70,27 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
 
   const handleConfirmSave = (name: string, description: string) => {
     try {
-      const strategy = buildStrategyFromBlocks(blocks, tokenMap, currentAccount?.address || "Anonymous");
+      let strategy;
+      if (builderMode === 'json') {
+         try {
+            const parsed = JSON.parse(rawJson);
+            // Handle case where user pastes full JSON with { sender, strategy: { ... } }
+            if (parsed.strategy && !parsed.id) {
+               strategy = parsed.strategy;
+            } else {
+               strategy = parsed;
+            }
+         } catch (e) {
+            throw new Error("Invalid JSON");
+         }
+      } else {
+        strategy = buildStrategyFromBlocks(blocks, tokenMap, currentAccount?.address || "Anonymous");
+      }
       
       // Update metadata with user input
+      if (!strategy.meta) {
+        strategy.meta = {};
+      }
       strategy.meta.name = name;
       strategy.meta.description = description;
       strategy.meta.updated_at = Date.now();
@@ -100,8 +124,32 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
 
     setPublishing(true);
     try {
-      // Convert blocks to nodes
-      const nodes = blocks.map((block, index) => ({
+      let strategy: Strategy;
+
+      if (builderMode === 'json') {
+        try {
+          const parsed = JSON.parse(rawJson);
+          strategy = {
+            ...parsed,
+            id: uuidv4(),
+            version: '1.0.0',
+            meta: {
+              ...parsed.meta,
+              name: data.name,
+              author: currentAccount.address,
+              description: data.description,
+              created_at: Date.now(),
+              updated_at: Date.now(),
+              tags: data.tags,
+              price_sui: data.price
+            }
+          };
+        } catch (e) {
+           throw new Error("Invalid JSON");
+        }
+      } else {
+        // Convert blocks to nodes
+        const nodes = blocks.map((block, index) => ({
         id: block.id,
         type: block.type,
         position: { x: 100 + (index * 250), y: 100 }, // Simple layout
@@ -119,7 +167,7 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
         type: 'smoothstep'
       }));
 
-      const strategy: Strategy = {
+      strategy = {
         id: uuidv4(),
         version: '1.0.0',
         meta: {
@@ -134,6 +182,7 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
         nodes,
         edges
       };
+    }
 
       await uploadWorkflow(strategy);
       
@@ -161,12 +210,42 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
         </p>
       </div>
 
+      {/* Mode Toggle */}
+      <div className="flex justify-end mb-2">
+        <ToggleButtonGroup
+          value={builderMode}
+          exclusive
+          onChange={(_, newMode) => {
+             if (newMode) setBuilderMode(newMode);
+          }}
+          aria-label="builder mode"
+          sx={{
+            backgroundColor: '#1E1E1E',
+            '& .MuiToggleButton-root': {
+              color: '#888',
+              borderColor: '#333',
+              '&.Mui-selected': {
+                color: '#fff',
+                backgroundColor: '#333',
+              }
+            }
+          }}
+        >
+          <ToggleButton value="blocks" aria-label="blocks">
+            Block Builder
+          </ToggleButton>
+          <ToggleButton value="json" aria-label="json">
+            Raw JSON
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </div>
+
       <BuilderHeader
         onClear={handleClear}
         onRunSimulation={runSimulation}
         onSave={handleSaveClick}
         isSimulating={isSimulating}
-        hasBlocks={blocks.length > 0}
+        hasBlocks={builderMode === 'blocks' ? blocks.length > 0 : rawJson.length > 0}
         simulationSuccess={!!simulationResult}
       />
 
@@ -179,16 +258,22 @@ export function BuilderSection({ onNavigate }: BuilderSectionProps) {
       <Grid container spacing={4} className="flex-1 min-h-0">
         {/* Left Panel: Canvas */}
         <Grid size={{ xs: 12, md: 8 }} className="flex flex-col gap-4 h-full overflow-hidden">
-          {/* Block Palette */}
-          <BlockPalette onAddBlock={addBlock} />
+          {builderMode === 'blocks' ? (
+            <>
+              {/* Block Palette */}
+              <BlockPalette onAddBlock={addBlock} />
 
-          {/* Canvas Area */}
-          <Canvas
-            blocks={blocks}
-            tokenMap={tokenMap}
-            onRemoveBlock={removeBlock}
-            onUpdateBlockParam={updateBlockParam}
-          />
+              {/* Canvas Area */}
+              <Canvas
+                blocks={blocks}
+                tokenMap={tokenMap}
+                onRemoveBlock={removeBlock}
+                onUpdateBlockParam={updateBlockParam}
+              />
+            </>
+          ) : (
+            <JsonEditor value={rawJson} onChange={setRawJson} />
+          )}
         </Grid>
 
         {/* Right Panel: Simulation Results */}

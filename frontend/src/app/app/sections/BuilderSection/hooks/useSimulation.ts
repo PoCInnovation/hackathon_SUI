@@ -9,9 +9,11 @@ interface UseSimulationProps {
   tokenMap: Record<string, string>;
   senderAddress: string;
   onSuccess: (result: SimulationResult) => void;
+  builderMode?: 'blocks' | 'json';
+  rawJson?: string;
 }
 
-export function useSimulation({ blocks, tokenMap, senderAddress, onSuccess }: UseSimulationProps) {
+export function useSimulation({ blocks, tokenMap, senderAddress, onSuccess, builderMode = 'blocks', rawJson = '' }: UseSimulationProps) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,8 +27,23 @@ export function useSimulation({ blocks, tokenMap, senderAddress, onSuccess }: Us
     setError(null);
 
     try {
-      // Build strategy from blocks
-      const strategy = buildStrategyFromBlocks(blocks, tokenMap, senderAddress);
+      // Build strategy from blocks or use raw JSON
+      let strategy;
+      if (builderMode === 'json') {
+        try {
+          const parsed = JSON.parse(rawJson);
+          // Handle case where user pastes full JSON with { sender, strategy: { ... } }
+          if (parsed.strategy && !parsed.id) {
+             strategy = parsed.strategy;
+          } else {
+             strategy = parsed;
+          }
+        } catch (e) {
+          throw new Error("Invalid JSON");
+        }
+      } else {
+        strategy = buildStrategyFromBlocks(blocks, tokenMap, senderAddress);
+      }
       
       // Debug: log the generated strategy
       console.log("Generated Strategy JSON:", JSON.stringify(strategy, null, 2));
