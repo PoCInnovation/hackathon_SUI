@@ -8,7 +8,17 @@ export function RegisterEnokiWallets() {
   const { client, network } = useSuiClientContext();
 
   useEffect(() => {
-    if (!isEnokiNetwork(network)) return;
+    if (!isEnokiNetwork(network)) {
+      console.log("Enoki: Current network is not supported", network);
+      return;
+    }
+
+    const apiKey = process.env.NEXT_PUBLIC_ENOKI_API_KEY;
+    if (!apiKey || apiKey.startsWith("YOUR_")) {
+      console.error("Enoki: Invalid API Key configuration. Please check your .env.local file.");
+    }
+
+    console.log("Enoki: Registering wallets for network", network);
 
     const { unregister } = registerEnokiWallets({
       apiKey: process.env.NEXT_PUBLIC_ENOKI_API_KEY || "YOUR_PUBLIC_ENOKI_API_KEY",
