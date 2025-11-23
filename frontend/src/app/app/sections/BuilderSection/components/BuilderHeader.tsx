@@ -71,28 +71,28 @@ export function BuilderHeader({
             padding: '10px 24px',
             border: '2px solid',
             borderRadius: 0,
-            ...(!hasBlocks || isSimulating
-              ? {
-                  borderColor: '#ef4444',
-                  color: '#fca5a5',
-                  backgroundColor: '#1a0505',
-                  boxShadow: 'inset 0 0 0 1px rgba(239, 68, 68, 0.2)',
-                }
-              : {
-                  borderColor: '#3b82f6',
-                  color: '#ffffff',
-                  backgroundColor: '#1e3a8a',
-                  boxShadow: 'inset 0 0 0 1px rgba(59, 130, 246, 0.4), 0 3px 0 rgba(0, 0, 0, 0.6)',
-                  '&:hover': {
-                    backgroundColor: '#1e40af',
-                    borderColor: '#60a5fa',
-                    boxShadow: 'inset 0 0 0 1px rgba(96, 165, 250, 0.5), 0 3px 0 rgba(0, 0, 0, 0.6)',
-                  },
-                  '&:active': {
-                    boxShadow: 'inset 0 3px 0 rgba(0, 0, 0, 0.6)',
-                    transform: 'translateY(2px)',
-                  },
-                }),
+            // Default (Enabled) Styles
+            borderColor: '#3b82f6',
+            color: '#ffffff',
+            backgroundColor: '#1e3a8a',
+            boxShadow: 'inset 0 0 0 1px rgba(59, 130, 246, 0.4), 0 3px 0 rgba(0, 0, 0, 0.6)',
+            '&:hover': {
+              backgroundColor: '#1e40af',
+              borderColor: '#60a5fa',
+              boxShadow: 'inset 0 0 0 1px rgba(96, 165, 250, 0.5), 0 3px 0 rgba(0, 0, 0, 0.6)',
+            },
+            '&:active': {
+              boxShadow: 'inset 0 3px 0 rgba(0, 0, 0, 0.6)',
+              transform: 'translateY(2px)',
+            },
+            // Disabled Styles Override
+            '&.Mui-disabled': {
+              borderColor: '#ef4444',
+              color: '#fee2e2',
+              backgroundColor: '#7f1d1d',
+              boxShadow: 'none',
+              opacity: 0.9,
+            }
           }}
         >
           {isSimulating ? "PROCESSING..." : "EXECUTE SIMULATION"}
