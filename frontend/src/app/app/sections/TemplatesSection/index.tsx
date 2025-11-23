@@ -378,8 +378,8 @@ export function TemplatesSection() {
               <div className="absolute inset-0 bg-[linear-gradient(rgba(18,24,38,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(18,24,38,0.5)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-20" />
 
               {/* Panel Header */}
-              <div className="p-8 border-b border-white/10 flex justify-between items-start bg-[#050a14]/90 backdrop-blur relative z-10">
-                <div>
+              <div className="p-8 border-b border-white/10 flex justify-between items-start gap-4 bg-[#050a14]/90 backdrop-blur relative z-10">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="px-2 py-1 bg-blue-500/10 border border-blue-500/30 text-[10px] font-mono text-blue-400 uppercase tracking-wider">
                       Strategy Protocol
@@ -390,7 +390,7 @@ export function TemplatesSection() {
                       </div>
                     )}
                   </div>
-                  <h2 className="text-3xl font-pixel text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-4 tracking-wide">
+                  <h2 className="text-3xl font-pixel text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-4 tracking-wide truncate">
                     {selectedTemplate.meta.name}
                   </h2>
                   <div className="flex items-center gap-6 text-xs font-mono text-gray-500">
@@ -404,12 +404,21 @@ export function TemplatesSection() {
                     </div>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setSelectedTemplate(null)}
-                  className="group p-2 hover:bg-red-500/10 border border-transparent hover:border-red-500/50 transition-all duration-300"
-                >
-                  <X size={24} className="text-gray-500 group-hover:text-red-400" />
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button 
+                    onClick={() => handleDelete(selectedTemplate.id)}
+                    className="group p-2 hover:bg-red-500/10 border border-transparent hover:border-red-500/50 transition-all duration-300"
+                    title="Delete Strategy"
+                  >
+                    <Trash2 size={20} className="text-gray-500 group-hover:text-red-400" />
+                  </button>
+                  <button 
+                    onClick={() => setSelectedTemplate(null)}
+                    className="group p-2 hover:bg-red-500/10 border border-transparent hover:border-red-500/50 transition-all duration-300"
+                  >
+                    <X size={24} className="text-gray-500 group-hover:text-red-400" />
+                  </button>
+                </div>
               </div>
 
               {/* Panel Content */}
@@ -537,15 +546,6 @@ export function TemplatesSection() {
                   </button>
                 </div>
                 
-                <div className="mt-6 flex justify-center">
-                   <button 
-                    className="flex items-center gap-2 text-red-500/70 hover:text-red-400 text-[10px] font-mono uppercase tracking-widest transition-colors hover:underline decoration-red-500/30 underline-offset-4"
-                    onClick={() => handleDelete(selectedTemplate.id)}
-                  >
-                    <Trash2 size={12} />
-                    Delete Strategy
-                  </button>
-                </div>
 
                 {/* Execution Steps in Footer */}
                 <AnimatePresence>
