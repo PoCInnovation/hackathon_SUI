@@ -15,7 +15,17 @@ export function setWalletCookie(walletAddress: string): void {
     const expirationDate = new Date();
     expirationDate.setSeconds(expirationDate.getSeconds() + WALLET_COOKIE_MAX_AGE);
 
-    document.cookie = `${WALLET_COOKIE_NAME}=${encodeURIComponent(walletAddress)}; path=/; max-age=${WALLET_COOKIE_MAX_AGE}; SameSite=Strict; Secure`;
+    // Use SameSite=Lax for better compatibility with OAuth redirects in Chromium
+    // Remove Secure flag for localhost development
+    const isProduction = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const secureFlag = isProduction ? '; Secure' : '';
+    
+    document.cookie = `${WALLET_COOKIE_NAME}=${encodeURIComponent(walletAddress)}; path=/; max-age=${WALLET_COOKIE_MAX_AGE}; SameSite=Lax${secureFlag}`;
+    
+    // Also store in localStorage as backup for Chromium
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(WALLET_COOKIE_NAME, walletAddress);
+    }
   } catch (error) {
     console.error("Failed to set wallet cookie:", error);
   }
@@ -26,6 +36,7 @@ export function setWalletCookie(walletAddress: string): void {
  */
 export function getWalletCookie(): string | null {
   try {
+    // Try cookie first
     const name = WALLET_COOKIE_NAME + "=";
     const cookies = document.cookie.split(";");
 
@@ -35,6 +46,15 @@ export function getWalletCookie(): string | null {
         return decodeURIComponent(cookie.substring(name.length));
       }
     }
+    
+    // Fallback to localStorage for Chromium compatibility
+    if (typeof window !== 'undefined') {
+      const storedValue = window.localStorage.getItem(WALLET_COOKIE_NAME);
+      if (storedValue) {
+        return storedValue;
+      }
+    }
+    
     return null;
   } catch (error) {
     console.error("Failed to get wallet cookie:", error);
@@ -47,7 +67,13 @@ export function getWalletCookie(): string | null {
  */
 export function deleteWalletCookie(): void {
   try {
-    document.cookie = `${WALLET_COOKIE_NAME}=; path=/; max-age=0; SameSite=Strict; Secure`;
+    // Delete cookie
+    document.cookie = `${WALLET_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+    
+    // Also remove from localStorage
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(WALLET_COOKIE_NAME);
+    }
   } catch (error) {
     console.error("Failed to delete wallet cookie:", error);
   }
