@@ -61,8 +61,6 @@ export class Simulator {
       // 2. Execute Dry Run
       // Set a high gas budget for simulation to avoid "could not determine budget" errors
       // The dry run will show actual gas needed regardless of this value
-      tx.setGasBudget(1000000000); // 1 SUI max gas budget for simulation
-
       const txBytes = await tx.build({ client: this.client });
 
       const dryRunResult = await this.client.dryRunTransactionBlock({
@@ -175,9 +173,17 @@ export class Simulator {
       if (abortCode === 1) {
         return "Assertion failed in flash loan contract. Check your strategy logic.";
       }
+      if (abortCode === 0) {
+        return "Non-zero coin destruction: You are trying to destroy a coin that still has value. This usually happens when a swap doesn't consume the full input amount, and the remainder is not handled. Please ensure your swap amounts match your input amounts exactly.";
+      }
 
       // Generic message for other abort codes
       return `Execution error (Error code: ${abortCode || "unknown"}). You may not have enough funds or there may be an issue with your strategy logic on mainnet.`;
+    }
+
+    // Handle unused value errors (bytecode verification)
+    if (errorMsg.includes("unused") || errorMsg.includes("drop")) {
+       return "Unused value error: A coin or object was created but not used. In Sui, you cannot simply drop coins with value. You must merge them, transfer them, or destroy them (if zero).";
     }
 
     // Handle other error patterns

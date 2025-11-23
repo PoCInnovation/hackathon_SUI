@@ -7,7 +7,7 @@ export function useBlocks() {
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
 
   const addBlock = (type: BlockType) => {
-    let initialParams: Record<string, string> = {};
+    let initialParams: Record<string, any> = {};
 
     switch (type) {
       case "flash_borrow":
@@ -23,6 +23,16 @@ export function useBlocks() {
         break;
       case "flash_repay":
         initialParams = { asset: "SUI" };
+        break;
+      case "custom":
+        initialParams = {
+          label: "Custom Block",
+          target: "",
+          arguments: [],
+          type_arguments: [],
+          inputs: {},
+          outputs: []
+        };
         break;
     }
 
@@ -40,7 +50,7 @@ export function useBlocks() {
     setSimulationResult(null);
   };
 
-  const updateBlockParam = (id: string, key: string, value: string) => {
+  const updateBlockParam = (id: string, key: string, value: any) => {
     setBlocks(prev => prev.map(b => 
       b.id === id ? { ...b, params: { ...b.params, [key]: value } } : b
     ));

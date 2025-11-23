@@ -42,7 +42,7 @@ const ProtocolSchema = z.enum([
   "NATIVE",
 ]);
 
-const EdgeTypeSchema = z.enum(["COIN", "RECEIPT"]);
+const EdgeTypeSchema = z.enum(["COIN", "RECEIPT", "CUSTOM_EDGE"]);
 const OutputTypeSchema = z.enum(["COIN", "RECEIPT"]);
 const SwapDirectionSchema = z.enum(["A_TO_B", "B_TO_A", "BASE_TO_QUOTE", "QUOTE_TO_BASE"]);
 const AmountModeSchema = z.enum(["EXACT_IN", "EXACT_OUT"]);
@@ -255,7 +255,7 @@ export const EdgeSchema = z.object({
   target: z.string().min(1),
   target_input: z.string().min(1),
   edge_type: EdgeTypeSchema,
-  coin_type: CoinTypeSchema.optional(),
+  coin_type: z.string().optional(), // Relaxed validation for CUSTOM_EDGE
 });
 
 // ============================================================================

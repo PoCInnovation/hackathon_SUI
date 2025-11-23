@@ -40,12 +40,12 @@ export function TemplatesSection() {
   // Extract execution steps from strategy nodes
   const extractStepsFromStrategy = (strategy: Strategy): ExecutionStepDetail[] => {
     return strategy.nodes
-      .filter(node => ['FLASH_BORROW', 'DEX_SWAP', 'FLASH_REPAY', 'COIN_MERGE', 'COIN_SPLIT'].includes(node.type))
+      .filter(node => ['FLASH_BORROW', 'DEX_SWAP', 'FLASH_REPAY', 'COIN_MERGE', 'COIN_SPLIT', 'CUSTOM'].includes(node.type))
       .map((node, index) => {
         const step: ExecutionStepDetail = {
           id: node.id,
           order: index + 1,
-          type: node.type as 'FLASH_BORROW' | 'DEX_SWAP' | 'FLASH_REPAY' | 'COIN_MERGE' | 'COIN_SPLIT',
+          type: node.type as 'FLASH_BORROW' | 'DEX_SWAP' | 'FLASH_REPAY' | 'COIN_MERGE' | 'COIN_SPLIT' | 'CUSTOM',
           protocol: node.protocol || 'UNKNOWN',
           status: 'pending',
           inputs: {

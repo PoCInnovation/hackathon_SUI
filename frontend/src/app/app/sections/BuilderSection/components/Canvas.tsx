@@ -9,7 +9,7 @@ interface CanvasProps {
   blocks: Block[];
   tokenMap: Record<string, string>;
   onRemoveBlock: (id: string) => void;
-  onUpdateBlockParam: (id: string, key: string, value: string) => void;
+  onUpdateBlockParam: (id: string, key: string, value: any) => void;
 }
 
 export function Canvas({ blocks, tokenMap, onRemoveBlock, onUpdateBlockParam }: CanvasProps) {

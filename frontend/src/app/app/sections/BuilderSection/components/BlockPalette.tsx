@@ -30,6 +30,13 @@ const BLOCK_PALETTE = [
     color: "#10b981",
     glow: "#10b98140",
   },
+  { 
+    type: "custom" as BlockType, 
+    label: "CUSTOM BLOCK", 
+    icon: Plus,
+    color: "#9333ea",
+    glow: "#9333ea40",
+  },
 ];
 
 export function BlockPalette({ onAddBlock }: BlockPaletteProps) {

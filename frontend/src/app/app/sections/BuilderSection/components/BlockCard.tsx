@@ -5,13 +5,15 @@ import { Trash2, GripVertical } from "lucide-react";
 import { Block, BlockTypeDef } from "./types";
 import { AssetSelector } from "./AssetSelector";
 
+import { CustomBlock } from "./CustomBlock";
+
 interface BlockCardProps {
   block: Block;
   blockDef: BlockTypeDef;
   index: number;
   tokenMap: Record<string, string>;
   onRemove: (id: string) => void;
-  onUpdateParam: (id: string, key: string, value: string) => void;
+  onUpdateParam: (id: string, key: string, value: any) => void;
   isLast: boolean;
 }
 
@@ -23,6 +25,8 @@ const getBlockColor = (type: string) => {
       return { border: "#3b82f6", glow: "#3b82f640", text: "#60a5fa" };
     case "flash_repay":
       return { border: "#10b981", glow: "#10b98140", text: "#34d399" };
+    case "custom":
+      return { border: "#9333ea", glow: "#9333ea40", text: "#d8b4fe" };
     default:
       return { border: "#6b7280", glow: "#6b728040", text: "#9ca3af" };
   }
@@ -98,7 +102,7 @@ export function BlockCard({
                   className="font-mono text-sm font-bold uppercase tracking-wider"
                   style={{ color: colors.text }}
                 >
-                  {blockDef.label}
+                  {block.type === 'custom' ? (block.params.label || blockDef.label) : blockDef.label}
                 </span>
                 <span 
                   className="px-2 py-0.5 border font-mono text-[10px] font-bold"
@@ -191,6 +195,10 @@ export function BlockCard({
                 tokenMap={tokenMap}
               />
             </div>
+          )}
+
+          {block.type === "custom" && (
+            <CustomBlock block={block} onUpdateParam={onUpdateParam} />
           )}
         </div>
 

@@ -58,6 +58,8 @@ export function StepsViewer({ steps, stats }: StepsViewerProps) {
         return 'text-amber-400 bg-amber-500/10';
       case 'COIN_SPLIT':
         return 'text-cyan-400 bg-cyan-500/10';
+      case 'CUSTOM':
+        return 'text-purple-400 bg-purple-500/10';
       default:
         return 'text-gray-400 bg-gray-500/10';
     }

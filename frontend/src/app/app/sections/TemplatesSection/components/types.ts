@@ -6,7 +6,7 @@
 export interface ExecutionStepDetail {
   id: string;                              // Unique step identifier
   order: number;                           // Order in sequence (1, 2, 3, etc.)
-  type: 'FLASH_BORROW' | 'DEX_SWAP' | 'FLASH_REPAY' | 'COIN_MERGE' | 'COIN_SPLIT'; // Step type
+  type: 'FLASH_BORROW' | 'DEX_SWAP' | 'FLASH_REPAY' | 'COIN_MERGE' | 'COIN_SPLIT' | 'CUSTOM'; // Step type
   protocol: string;                        // Protocol name (NAVI, CETUS, DEEPBOOK, etc.)
   status: 'pending' | 'executing' | 'success' | 'error'; // Step execution status
   startTime?: number;                      // Timestamp when step started

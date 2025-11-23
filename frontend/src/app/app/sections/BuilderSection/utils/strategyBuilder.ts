@@ -43,6 +43,7 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
   };
 
   let lastCoinOutputId: string | null = null;
+  let lastCoinNodeId: string | null = null;
   let lastCoinType: string | null = null;
   let flashLoanReceiptId: string | null = null;
   let flashLoanReceiptNodeId: string | null = null;
@@ -66,34 +67,29 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
       });
 
       lastCoinOutputId = "coin_borrowed";
+      lastCoinNodeId = nodeId;
       lastCoinType = asset;
       flashLoanReceiptId = "receipt";
       flashLoanReceiptNodeId = nodeId;
     } 
     else if (block.type === "swap") {
+      // ... (existing swap logic) ...
+      // We need to update lastCoinNodeId here too
       let coinA = normalizeToken(block.params.from, tokenMap);
       let coinB = normalizeToken(block.params.to, tokenMap);
       const poolId = block.params.pool_id;
       const amount = block.params.amount === "ALL" ? "ALL" : normalizeAmount(block.params.amount);
       
       let direction = "A_TO_B";
-
-      // Special handling for SUI/USDC to match backend script structure
-      // Ensure coin_type_a is SUI and coin_type_b is USDC (or vice versa depending on pool, but keeping consistent)
-      // Assuming SUI is usually A in this pool 0xcf99...
       const SUI_ADDR = "0x2::sui::SUI";
       const USDC_ADDR = "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN";
 
       if ((coinA === SUI_ADDR && coinB === USDC_ADDR) || (coinA === USDC_ADDR && coinB === SUI_ADDR)) {
         if (coinA === USDC_ADDR) {
-          // User wants USDC -> SUI
-          // Set A=SUI, B=USDC, Direction=B_TO_A
           coinA = SUI_ADDR;
           coinB = USDC_ADDR;
           direction = "B_TO_A";
         } else {
-          // User wants SUI -> USDC
-          // Set A=SUI, B=USDC, Direction=A_TO_B
           coinA = SUI_ADDR;
           coinB = USDC_ADDR;
           direction = "A_TO_B";
@@ -114,7 +110,7 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
           slippage_tolerance: "0.01"
         },
         inputs: {
-          coin_in: lastCoinOutputId ? `${nodes[nodes.length - 1].id}.${lastCoinOutputId}` : "input_coin"
+          coin_in: lastCoinOutputId ? `${lastCoinNodeId || nodes[nodes.length - 1].id}.${lastCoinOutputId}` : "input_coin"
         },
         outputs: [
           { id: "coin_out", type: `Coin<${direction === "A_TO_B" ? coinB : coinA}>`, output_type: "COIN" }
@@ -123,10 +119,10 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
 
       // Create Edge
       if (nodes.length > 1) {
-        const sourceNode = nodes[nodes.length - 2];
+        const sourceNodeId = lastCoinNodeId || nodes[nodes.length - 2].id;
         edges.push({
           id: `edge_${index}`,
-          source: sourceNode.id,
+          source: sourceNodeId,
           source_output: lastCoinOutputId!,
           target: nodeId,
           target_input: "coin_in",
@@ -136,8 +132,11 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
       }
 
       lastCoinOutputId = "coin_out";
+      lastCoinNodeId = nodeId;
       lastCoinType = direction === "A_TO_B" ? coinB : coinA;
     }
+    // ... (flash_repay logic is already updated in previous step to use lastCoinNodeId) ...
+
     else if (block.type === "flash_repay") {
       const asset = normalizeToken(block.params.asset, tokenMap);
 
@@ -156,7 +155,10 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
 
       // 2. Merge Funds
       const mergeNodeId = `merge_funds_${index}`;
-      const previousNode = nodes[nodes.length - 2]; // The node before split_gas (e.g. swap)
+      
+      // Use the tracked lastCoinNodeId instead of naively picking the previous node
+      // This handles cases where intermediate cleanup nodes were inserted
+      const sourceNodeId = lastCoinNodeId || nodes[nodes.length - 2].id;
       
       nodes.push({
         id: mergeNodeId,
@@ -164,7 +166,7 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
         protocol: "NATIVE",
         params: {},
         inputs: {
-          target_coin: `${previousNode.id}.${lastCoinOutputId}`,
+          target_coin: `${sourceNodeId}.${lastCoinOutputId}`,
           merge_coins: [`${splitNodeId}.fee_coin`]
         },
         outputs: [
@@ -175,7 +177,7 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
       // Edge: Previous -> Merge
       edges.push({
         id: `edge_merge_main_${index}`,
-        source: previousNode.id,
+        source: sourceNodeId,
         source_output: lastCoinOutputId!,
         target: mergeNodeId,
         target_input: "target_coin",
@@ -228,6 +230,143 @@ export function buildStrategyFromBlocks(blocks: Block[], tokenMap: Record<string
           edge_type: "RECEIPT"
         });
       }
+    }
+
+    else if (block.type === "custom") {
+      // Helper to ensure we have objects/arrays
+      const parseParam = (val: any, defaultVal: any) => {
+        if (typeof val === 'string') {
+          try { return JSON.parse(val); } catch { return defaultVal; }
+        }
+        return val || defaultVal;
+      };
+
+      const customParams = {
+        target: block.params.target,
+        arguments: parseParam(block.params.arguments, []),
+        type_arguments: parseParam(block.params.type_arguments, [])
+      };
+      
+      const customInputs = parseParam(block.params.inputs, {});
+      const customOutputs = parseParam(block.params.outputs, []);
+
+      nodes.push({
+        id: nodeId,
+        type: "CUSTOM",
+        protocol: "CUSTOM",
+        label: block.params.label || "Custom Block",
+        params: customParams,
+        inputs: customInputs,
+        outputs: customOutputs
+      });
+
+      // Helper to resolve friendly node IDs to actual builder IDs
+      const resolveNodeId = (friendlyId: string): string => {
+        // 1. Check if it's already a valid ID
+        if (nodes.find(n => n.id === friendlyId)) return friendlyId;
+
+        // 2. Heuristic mapping
+        if (friendlyId.startsWith('borrow')) {
+           const match = nodes.find(n => n.type === 'FLASH_BORROW');
+           if (match) return match.id;
+        } else if (friendlyId.startsWith('swap')) {
+           const prevNode = nodes[nodes.length - 2];
+           if (prevNode) return prevNode.id;
+        } else if (friendlyId.startsWith('node_')) {
+           // Fallback for mismatched node_ indexes
+           const prevNode = nodes[nodes.length - 2];
+           if (prevNode) return prevNode.id;
+        }
+        
+        return friendlyId; // Return original if no match found
+      };
+
+      // 1. Fix references in params.arguments
+      if (Array.isArray(customParams.arguments)) {
+        customParams.arguments = customParams.arguments.map((arg: any) => {
+          if (arg.input_ref && typeof arg.input_ref === 'string' && arg.input_ref.includes('.')) {
+            const [nodeId, outputId] = arg.input_ref.split('.');
+            const resolvedNodeId = resolveNodeId(nodeId);
+            return { ...arg, input_ref: `${resolvedNodeId}.${outputId}` };
+          }
+          return arg;
+        });
+      }
+
+      // 2. Fix references in inputs and generate edges
+      Object.entries(customInputs).forEach(([inputName, sourceRef]) => {
+        if (typeof sourceRef === 'string' && sourceRef.includes('.')) {
+          let [sourceNodeId, sourceOutputId] = sourceRef.split('.');
+          sourceNodeId = resolveNodeId(sourceNodeId);
+
+          // Update the input value in the node inputs map as well
+          customInputs[inputName] = `${sourceNodeId}.${sourceOutputId}`;
+
+          edges.push({
+            id: `edge_${nodeId}_${inputName}`,
+            source: sourceNodeId,
+            source_output: sourceOutputId,
+            target: nodeId,
+            target_input: inputName,
+            edge_type: "CUSTOM_EDGE", 
+            coin_type: "UNKNOWN"
+          });
+        }
+      });
+
+      // Update lastCoinOutputId for subsequent blocks (like Repay)
+      if (customOutputs.length > 0) {
+        const primaryCoinOutput = customOutputs.find((o: any) => o.output_type === 'COIN');
+        if (primaryCoinOutput) {
+          lastCoinOutputId = primaryCoinOutput.id;
+          lastCoinNodeId = nodeId; // Update node ID here!
+          // We don't easily know the coin type without parsing the type string, 
+          // but we can try to extract it or default to UNKNOWN
+          const typeMatch = primaryCoinOutput.type.match(/Coin<(.+)>/);
+          lastCoinType = typeMatch ? typeMatch[1] : "UNKNOWN";
+        }
+
+        // Auto-cleanup: Destroy unused zero-value coins
+        customOutputs.forEach((output: any) => {
+           if (output.output_type === 'COIN' && output.id !== lastCoinOutputId) {
+              // Extract T
+              const typeMatch = output.type.match(/Coin<(.+)>/);
+              if (typeMatch) {
+                const coinType = typeMatch[1];
+                const cleanupNodeId = `cleanup_${nodeId}_${output.id}`;
+                
+                nodes.push({
+                  id: cleanupNodeId,
+                  type: "CUSTOM",
+                  protocol: "CUSTOM",
+                  label: "Auto-Cleanup",
+                  params: {
+                    target: "0x2::coin::destroy_zero",
+                    arguments: [
+                      { type: "input", input_ref: `${nodeId}.${output.id}` }
+                    ],
+                    type_arguments: [coinType]
+                  },
+                  inputs: {
+                    coin: `${nodeId}.${output.id}`
+                  },
+                  outputs: []
+                });
+
+                edges.push({
+                  id: `edge_${cleanupNodeId}`,
+                  source: nodeId,
+                  source_output: output.id,
+                  target: cleanupNodeId,
+                  target_input: "coin",
+                  edge_type: "CUSTOM_EDGE",
+                  coin_type: coinType
+                });
+              }
+           }
+        });
+      }
+
     }
   });
 
