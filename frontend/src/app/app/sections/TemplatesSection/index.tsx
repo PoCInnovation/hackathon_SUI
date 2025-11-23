@@ -17,7 +17,7 @@ export function TemplatesSection() {
   const currentAccount = useCurrentAccount();
   const [templates, setTemplates] = useState<Strategy[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Strategy | null>(null);
-  
+
   // Execution State
   const [executionLogs, setExecutionLogs] = useState<Log[]>([]);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>('idle');
@@ -122,7 +122,7 @@ export function TemplatesSection() {
         } catch (e) { console.error(e); }
       }
     });
-    
+
     if (selectedTemplate?.id === workflowId) setSelectedTemplate(null);
   };
 
@@ -154,7 +154,7 @@ export function TemplatesSection() {
       // 1. Build transaction
       addLog("Building transaction on backend...", 'info');
       const buildRes = await api.buildTransaction(selectedTemplate, currentAccount.address);
-      
+
       if (!buildRes.success || !buildRes.transactionBytes) {
         throw new Error(buildRes.error || "Failed to build transaction");
       }
@@ -171,7 +171,7 @@ export function TemplatesSection() {
       // 3. Sign and Execute
       setExecutionStatus('signing');
       addLog("Requesting wallet signature...", 'info');
-      
+
       const tx = Transaction.from(bytes);
 
       signAndExecuteTransaction(
@@ -195,7 +195,7 @@ export function TemplatesSection() {
 
               // Use ref to get the latest executionSteps (avoid closure issues)
               let currentSteps = executionStepsRef.current;
-              
+
               // Fallback: if ref is empty, try to re-extract from template
               if (!currentSteps || currentSteps.length === 0) {
                 currentSteps = extractStepsFromStrategy(selectedTemplate);
@@ -252,7 +252,7 @@ export function TemplatesSection() {
 
               try {
                 localStorage.setItem('execution_history', JSON.stringify(history));
-                
+
                 // Notify user
                 setNotification({ type: 'success', message: 'Execution recorded in history' });
               } catch (error) {
@@ -280,7 +280,7 @@ export function TemplatesSection() {
 
             // Save failed execution to history
             let currentSteps = executionStepsRef.current;
-            
+
             // Fallback: if ref is empty, try to re-extract from template
             if (!currentSteps || currentSteps.length === 0) {
               currentSteps = extractStepsFromStrategy(selectedTemplate);
@@ -319,12 +319,12 @@ export function TemplatesSection() {
               const existingHistory = localStorage.getItem('execution_history');
               const history = existingHistory ? JSON.parse(existingHistory) : [];
               history.unshift(historyEntry);
-              
+
               if (history.length > 100) history.splice(100);
-              
+
               localStorage.setItem('execution_history', JSON.stringify(history));
               setNotification({ type: 'error', message: 'Failed execution recorded in history' });
-              
+
               // Dispatch event
               window.dispatchEvent(new CustomEvent('execution_history_updated', { detail: historyEntry }));
             } catch (e) {
@@ -368,7 +368,7 @@ export function TemplatesSection() {
 
       // Call the uploadWorkflow function
       await uploadWorkflow(updatedStrategy);
-      
+
       setNotification({ type: 'success', message: 'Workflow published successfully!' });
       setPublishModalOpen(false);
       setSelectedTemplate(null);
@@ -419,7 +419,7 @@ export function TemplatesSection() {
                 onClick={() => setSelectedTemplate(template)}
                 className="relative group cursor-pointer"
               >
-                <div 
+                <div
                   className="bg-[#0a0a0a] border-2 p-5 relative overflow-hidden transition-all duration-200 hover:border-opacity-100 h-full flex flex-col"
                   style={{
                     borderColor: `${color.border}50`,
@@ -430,7 +430,7 @@ export function TemplatesSection() {
                   <div className="absolute top-0 right-0 w-3 h-3" style={{ backgroundColor: color.border }} />
 
                   {/* Hover Glow */}
-                  <div 
+                  <div
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
                     style={{
                       boxShadow: `inset 0 0 40px ${color.glow}`,
@@ -440,7 +440,7 @@ export function TemplatesSection() {
                   {/* Header */}
                   <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-800 relative z-10">
                     <div className="flex items-center gap-3">
-                      <div 
+                      <div
                         className="p-2 border-2"
                         style={{
                           borderColor: color.border,
@@ -451,13 +451,13 @@ export function TemplatesSection() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span 
+                          <span
                             className="font-mono text-sm font-bold uppercase tracking-wider"
                             style={{ color: color.text }}
                           >
                             STRATEGY
                           </span>
-                          <span 
+                          <span
                             className="px-2 py-0.5 border font-mono text-[10px] font-bold"
                             style={{
                               borderColor: color.border,
@@ -483,7 +483,7 @@ export function TemplatesSection() {
                     <p className="text-gray-500 text-xs font-mono line-clamp-3 mb-4">
                       {template.meta.description || "No description provided."}
                     </p>
-                    
+
                     <div className="flex flex-wrap gap-2 mt-auto">
                       {template.meta.tags?.slice(0, 3).map(tag => (
                         <span key={tag} className="px-2 py-1 bg-gray-900 border border-gray-800 text-[10px] text-gray-400 font-mono uppercase">
@@ -494,13 +494,13 @@ export function TemplatesSection() {
                   </div>
 
                   {/* Bottom Corners on Hover */}
-                  <motion.div 
-                    className="absolute bottom-0 left-0 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" 
-                    style={{ backgroundColor: color.border }} 
+                  <motion.div
+                    className="absolute bottom-0 left-0 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ backgroundColor: color.border }}
                   />
-                  <motion.div 
-                    className="absolute bottom-0 right-0 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" 
-                    style={{ backgroundColor: color.border }} 
+                  <motion.div
+                    className="absolute bottom-0 right-0 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ backgroundColor: color.border }}
                   />
                 </div>
               </motion.div>
@@ -508,7 +508,7 @@ export function TemplatesSection() {
           })}
         </div>
       )}
-      
+
       {/* Slide-in Details Panel */}
       <AnimatePresence>
         {selectedTemplate && (
@@ -567,14 +567,14 @@ export function TemplatesSection() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button 
+                  <button
                     onClick={() => handleDelete(selectedTemplate.id)}
                     className="group p-2 hover:bg-red-500/10 border border-transparent hover:border-red-500/50 transition-all duration-300"
                     title="Delete Strategy"
                   >
                     <Trash2 size={20} className="text-gray-500 group-hover:text-red-400" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => setSelectedTemplate(null)}
                     className="group p-2 hover:bg-red-500/10 border border-transparent hover:border-red-500/50 transition-all duration-300"
                   >
@@ -585,7 +585,7 @@ export function TemplatesSection() {
 
               {/* Panel Content */}
               <div className="flex-1 overflow-y-auto p-8 custom-scrollbar flex flex-col gap-8 relative z-10">
-                
+
 
 
                 {/* Description Box */}
@@ -614,7 +614,7 @@ export function TemplatesSection() {
                       {/* Corner Accents */}
                       <div className="absolute top-0 left-0 w-2 h-2 border-l border-t border-white/20 group-hover:border-blue-500 transition-colors" />
                       <div className="absolute bottom-0 right-0 w-2 h-2 border-r border-b border-white/20 group-hover:border-blue-500 transition-colors" />
-                      
+
                       <div className="flex justify-between items-start mb-2">
                         <stat.icon size={14} className="text-gray-600 group-hover:text-blue-400 transition-colors" />
                         <div className="text-[10px] text-gray-600 font-mono uppercase tracking-wider">{stat.label}</div>
@@ -645,7 +645,7 @@ export function TemplatesSection() {
                         <div className="flex-1 bg-[#0a0f1e] border border-white/5 p-4 group-hover:bg-white/[0.02] group-hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden">
                           {/* Scanline effect on hover */}
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none" />
-                          
+
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="text-xs font-mono text-blue-400 mb-1">{node.protocol}</div>
@@ -653,7 +653,7 @@ export function TemplatesSection() {
                             </div>
                             {/* Params Preview */}
                             <div className="text-right">
-                              {node.params.amount && (
+                              {node.params?.amount && (
                                 <div className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
                                   {(parseInt(node.params.amount) / 1_000_000_000).toFixed(2)} SUI
                                 </div>
@@ -670,7 +670,7 @@ export function TemplatesSection() {
               {/* Panel Footer Actions */}
               <div className="p-8 border-t border-white/10 bg-[#050a14] relative z-20">
                 <div className="grid grid-cols-2 gap-4">
-                  <button 
+                  <button
                     className="col-span-2 relative overflow-hidden group bg-blue-600 hover:bg-blue-500 text-white p-4 font-mono text-sm font-bold transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleRunStrategy}
                     disabled={executionStatus === 'building' || executionStatus === 'signing' || executionStatus === 'executing'}
@@ -690,16 +690,16 @@ export function TemplatesSection() {
                       )}
                     </div>
                   </button>
-                  
-                  <button 
+
+                  <button
                     className="flex items-center justify-center gap-2 bg-transparent border border-white/10 hover:border-white/30 hover:bg-white/5 text-gray-300 p-3 font-mono text-xs font-bold transition-all uppercase group"
                     onClick={() => alert("Edit functionality coming soon!")}
                   >
                     <Edit size={16} className="group-hover:text-blue-400 transition-colors" />
                     Edit
                   </button>
-                  
-                  <button 
+
+                  <button
                     className="flex items-center justify-center gap-2 bg-transparent border border-white/10 hover:border-white/30 hover:bg-white/5 text-gray-300 p-3 font-mono text-xs font-bold transition-all uppercase group"
                     onClick={handlePublishClick}
                   >
@@ -707,7 +707,7 @@ export function TemplatesSection() {
                     Publish
                   </button>
                 </div>
-                
+
 
                 {/* Execution Steps in Footer */}
                 <AnimatePresence>
@@ -718,9 +718,9 @@ export function TemplatesSection() {
                       exit={{ opacity: 0, height: 0, marginTop: 0 }}
                       className="overflow-hidden"
                     >
-                      <ExecutionSteps 
-                        logs={executionLogs} 
-                        status={executionStatus} 
+                      <ExecutionSteps
+                        logs={executionLogs}
+                        status={executionStatus}
                         txDigest={txDigest}
                         onClose={() => setExecutionStatus('idle')}
                       />
@@ -740,15 +740,15 @@ export function TemplatesSection() {
         loading={publishing}
       />
 
-      <Snackbar 
-        open={!!notification} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={6000}
         onClose={() => setNotification(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={() => setNotification(null)} 
-          severity={notification?.type} 
+        <Alert
+          onClose={() => setNotification(null)}
+          severity={notification?.type}
           sx={{ width: '100%' }}
         >
           {notification?.message}

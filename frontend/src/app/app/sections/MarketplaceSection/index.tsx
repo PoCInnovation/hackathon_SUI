@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useWorkflows, useWorkflowActions } from "@/hooks/useWorkflows";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 
 export function MarketplaceSection() {
@@ -11,6 +11,67 @@ export function MarketplaceSection() {
   const currentAccount = useCurrentAccount();
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+  const [ownedWorkflowIds, setOwnedWorkflowIds] = useState<Set<string>>(new Set());
+
+  // Check which workflows the user already owns
+  useEffect(() => {
+    if (!currentAccount) return;
+
+    const checkOwnership = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/api/seal/check-user-templates/${currentAccount.address}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const ownedIds = new Set(result.data.map((t: any) => t.templateId));
+          setOwnedWorkflowIds(ownedIds);
+        }
+      } catch (error) {
+        console.error('Failed to check owned workflows:', error);
+      }
+    };
+
+    checkOwnership();
+  }, [currentAccount, workflows]);
+
+  const handleDownload = async (workflowId: string, templateName: string) => {
+    if (!currentAccount) {
+      setMessage({ type: 'error', text: 'Please connect your wallet first' });
+      return;
+    }
+
+    setPurchasing(workflowId);
+    setMessage(null);
+
+    try {
+      setMessage({
+        type: 'info',
+        text: 'Downloading workflow...'
+      });
+
+      // Decrypt and save workflow (user already owns it)
+      const decryptedWorkflow = await decryptWorkflow(workflowId);
+
+      // Save to localStorage
+      const existingWorkflows = localStorage.getItem('purchased_workflows');
+      const workflows = existingWorkflows ? JSON.parse(existingWorkflows) : [];
+
+      // Check if not already in local storage
+      if (!workflows.find((w: any) => w.id === decryptedWorkflow.id)) {
+        workflows.push(decryptedWorkflow);
+        localStorage.setItem('purchased_workflows', JSON.stringify(workflows));
+      }
+
+      setMessage({
+        type: 'success',
+        text: 'Workflow downloaded and saved to your templates!'
+      });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: `Download failed: ${err.message}` });
+    } finally {
+      setPurchasing(null);
+    }
+  };
 
   const handlePurchase = async (workflowId: string, templateIndex: number, templateName: string, priceSui: number) => {
     if (!currentAccount) {
@@ -43,6 +104,9 @@ export function MarketplaceSection() {
       const workflows = existingWorkflows ? JSON.parse(existingWorkflows) : [];
       workflows.push(decryptedWorkflow);
       localStorage.setItem('purchased_workflows', JSON.stringify(workflows));
+
+      // Add to owned set
+      setOwnedWorkflowIds(prev => new Set([...prev, workflowId]));
 
       setMessage({
         type: 'success',
@@ -185,13 +249,23 @@ export function MarketplaceSection() {
                     <div className="text-white font-pixel text-xl">
                       {workflow.price_sui} SUI
                     </div>
-                    <button
-                      onClick={() => handlePurchase(workflow.id, index, workflow.name, workflow.price_sui)}
-                      disabled={purchasing === workflow.id}
-                      className="px-6 py-2 bg-walrus-mint/20 border-2 border-walrus-mint hover:bg-walrus-mint hover:text-black transition-colors font-pixel text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {purchasing === workflow.id ? 'PURCHASING...' : 'BUY'}
-                    </button>
+                    {ownedWorkflowIds.has(workflow.id) ? (
+                      <button
+                        onClick={() => handleDownload(workflow.id, workflow.name)}
+                        disabled={purchasing === workflow.id}
+                        className="px-6 py-2 bg-green-500/20 border-2 border-green-500 hover:bg-green-500 hover:text-black transition-colors font-pixel text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {purchasing === workflow.id ? 'DOWNLOADING...' : '✓ DOWNLOAD'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handlePurchase(workflow.id, index, workflow.name, workflow.price_sui)}
+                        disabled={purchasing === workflow.id}
+                        className="px-6 py-2 bg-walrus-mint/20 border-2 border-walrus-mint hover:bg-walrus-mint hover:text-black transition-colors font-pixel text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {purchasing === workflow.id ? 'PURCHASING...' : 'BUY'}
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}

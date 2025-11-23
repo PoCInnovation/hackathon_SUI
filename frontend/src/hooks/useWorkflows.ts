@@ -46,7 +46,7 @@ export function useWorkflows() {
     try {
       const response = await fetch(`${API_BASE_URL}/workflows/list`);
       const result = await response.json();
-      
+
       if (result.success) {
         setWorkflows(result.data);
       } else {
@@ -81,7 +81,7 @@ export function useWorkflowActions() {
       });
 
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Upload failed');
       }
@@ -99,7 +99,7 @@ export function useWorkflowActions() {
 
     try {
       console.log('💰 Starting whitelist payment process...');
-      
+
       // 1. Build payment transaction
       console.log('📝 Building payment transaction...');
       const buildResponse = await fetch(`${API_BASE_URL}/seal/build-whitelist-payment`, {
@@ -111,7 +111,7 @@ export function useWorkflowActions() {
       });
 
       const buildResult = await buildResponse.json();
-      
+
       if (!buildResult.success) {
         throw new Error(buildResult.error || 'Failed to build payment transaction');
       }
@@ -121,10 +121,10 @@ export function useWorkflowActions() {
       // 2. Sign and execute payment
       console.log('🖊️ Please sign the payment transaction...');
       const txBytes = new Uint8Array(buildResult.data.transactionBytes);
-      
+
       // Reconstruct the transaction from bytes
       const transaction = Transaction.from(txBytes);
-      
+
       const signedTx = await signTransaction({
         transaction,
         chain: 'sui:testnet',
@@ -149,19 +149,43 @@ export function useWorkflowActions() {
 
       // 3. Confirm payment
       console.log('🔐 Confirming whitelist payment...');
-      const confirmResponse = await fetch(`${API_BASE_URL}/seal/confirm-whitelist-payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: currentAccount.address,
-          transactionDigest: paymentResult.digest,
-        }),
-      });
 
-      const confirmResult = await confirmResponse.json();
-      
-      if (!confirmResult.success) {
-        throw new Error(confirmResult.error || 'Failed to confirm payment');
+      // Wait a bit for the transaction to be indexed
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      let confirmResult;
+      let retries = 5;
+
+      while (retries > 0) {
+        try {
+          const confirmResponse = await fetch(`${API_BASE_URL}/seal/confirm-whitelist-payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              address: currentAccount.address,
+              transactionDigest: paymentResult.digest,
+            }),
+          });
+
+          confirmResult = await confirmResponse.json();
+
+          if (confirmResult.success) {
+            break;
+          }
+
+          console.log(`⚠️ Confirmation failed: ${confirmResult.error}. Retrying... (${retries} attempts left)`);
+        } catch (err) {
+          console.log(`⚠️ Confirmation network error. Retrying... (${retries} attempts left)`);
+        }
+
+        retries--;
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      if (!confirmResult || !confirmResult.success) {
+        throw new Error(confirmResult?.error || 'Failed to confirm payment after multiple attempts');
       }
 
       console.log('✅ Successfully added to whitelist!');
@@ -185,6 +209,9 @@ export function useWorkflowActions() {
 
       // 1. Build template purchase transaction
       console.log('📝 Building template purchase transaction...');
+      console.log('   API URL:', `${API_BASE_URL}/seal/build-template-purchase`);
+      console.log('   Request body:', { address: currentAccount.address, templateIndex });
+
       const buildResponse = await fetch(`${API_BASE_URL}/seal/build-template-purchase`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -194,10 +221,16 @@ export function useWorkflowActions() {
         }),
       });
 
+      console.log('   Response status:', buildResponse.status);
+      console.log('   Response ok:', buildResponse.ok);
+
       const buildResult = await buildResponse.json();
 
+      console.log('📦 Build response:', buildResult);
+
       if (!buildResult.success) {
-        throw new Error(buildResult.error || 'Failed to build purchase transaction');
+        console.error('❌ Build failed:', buildResult);
+        throw new Error(buildResult.error || buildResult.message || 'Failed to build purchase transaction');
       }
 
       console.log('💵 Template Price:', buildResult.data.price_sui, 'SUI');
@@ -231,20 +264,44 @@ export function useWorkflowActions() {
 
       // 3. Confirm purchase
       console.log('🔐 Confirming template purchase...');
-      const confirmResponse = await fetch(`${API_BASE_URL}/seal/confirm-template-purchase`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: currentAccount.address,
-          templateIndex,
-          transactionDigest: purchaseResult.digest,
-        }),
-      });
 
-      const confirmResult = await confirmResponse.json();
+      // Wait a bit for the transaction to be indexed
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      if (!confirmResult.success) {
-        throw new Error(confirmResult.error || 'Failed to confirm purchase');
+      let confirmResult;
+      let retries = 5;
+
+      while (retries > 0) {
+        try {
+          const confirmResponse = await fetch(`${API_BASE_URL}/seal/confirm-template-purchase`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              address: currentAccount.address,
+              templateIndex,
+              transactionDigest: purchaseResult.digest,
+            }),
+          });
+
+          confirmResult = await confirmResponse.json();
+
+          if (confirmResult.success) {
+            break;
+          }
+
+          console.log(`⚠️ Confirmation failed: ${confirmResult.error}. Retrying... (${retries} attempts left)`);
+        } catch (err) {
+          console.log(`⚠️ Confirmation network error. Retrying... (${retries} attempts left)`);
+        }
+
+        retries--;
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      if (!confirmResult || !confirmResult.success) {
+        throw new Error(confirmResult?.error || 'Failed to confirm purchase after multiple attempts');
       }
 
       console.log('✅ Successfully purchased template access!');
@@ -299,7 +356,7 @@ export function useWorkflowActions() {
 
     try {
       console.log('🔓 Starting decryption for workflow:', workflowId);
-      
+
       // 1. Get decrypt message (creates and stores session key)
       const messageResponse = await fetch(`${API_BASE_URL}/workflows/get-decrypt-message`, {
         method: 'POST',
@@ -317,7 +374,7 @@ export function useWorkflowActions() {
 
       const { sessionId, message: messageArray } = messageResult.data;
       const message = new Uint8Array(messageArray);
-      
+
       console.log('📝 Got decrypt message, preparing to sign...');
 
       // Petit délai pour laisser le wallet se préparer
@@ -326,7 +383,7 @@ export function useWorkflowActions() {
       // 2. Sign message avec retry en cas d'erreur de bounds
       let signResult;
       let retries = 3;
-      
+
       while (retries > 0) {
         try {
           console.log('🖊️ Asking wallet to sign... (make sure wallet popup is visible)');
@@ -393,7 +450,7 @@ export function useWorkflowActions() {
         `${API_BASE_URL}/workflows/owned/${currentAccount.address}`
       );
       const result = await response.json();
-      
+
       if (result.success) {
         return result.data;
       }

@@ -524,4 +524,89 @@ router.get('/seal/check-template-access/:address/:templateId', async (req: Reque
   }
 });
 
+/**
+ * GET /api/seal/check-user-templates/:address
+ * Récupérer tous les templates qu'un utilisateur possède
+ * Returns: liste des template IDs
+ */
+router.get('/seal/check-user-templates/:address', async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+
+    // Fetch whitelist to get all templates
+    const whitelistObj = await suiClient.getObject({
+      id: ADMIN_CONFIG.WHITELIST_ID,
+      options: { showContent: true },
+    });
+
+    if (!whitelistObj.data?.content || whitelistObj.data.content.dataType !== 'moveObject') {
+      throw new Error('Failed to fetch whitelist object');
+    }
+
+    const content = whitelistObj.data.content as any;
+    const templates = content.fields.templates || [];
+    const templateAccessTableId = content.fields.template_access.fields.id.id;
+
+    // Check each template to see if user has access
+    const ownedTemplates = [];
+
+    for (const template of templates) {
+      try {
+        // Check if user is in this template's access list
+        const templateAccessField = await suiClient.getDynamicFieldObject({
+          parentId: templateAccessTableId,
+          name: {
+            type: '0x2::object::ID',
+            value: template.fields.id,
+          },
+        });
+
+        if (templateAccessField.data) {
+          const accessTable = templateAccessField.data.content as any;
+          const userAccessTableId = accessTable.fields.value.fields.id.id;
+
+          // Check if user address is in the access table
+          try {
+            const userAccessField = await suiClient.getDynamicFieldObject({
+              parentId: userAccessTableId,
+              name: {
+                type: 'address',
+                value: address,
+              },
+            });
+
+            if (userAccessField.data) {
+              // User has access to this template
+              ownedTemplates.push({
+                templateId: template.fields.id,
+                name: template.fields.name,
+                author: template.fields.author,
+                description: template.fields.description,
+                price: Number(template.fields.price) / 1_000_000_000,
+                metadataBlobId: template.fields.metadata_blob_id,
+                dataBlobId: template.fields.data_blob_id,
+              });
+            }
+          } catch (error) {
+            // User doesn't have access to this template, continue
+          }
+        }
+      } catch (error) {
+        // Template has no purchases yet, continue
+      }
+    }
+
+    res.json({
+      success: true,
+      data: ownedTemplates,
+    });
+  } catch (error: any) {
+    console.error('Check user templates error:', error);
+    res.status(500).json({
+      error: 'Failed to check user templates',
+      message: error.message,
+    });
+  }
+});
+
 export default router;
