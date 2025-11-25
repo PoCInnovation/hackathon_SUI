@@ -21,7 +21,6 @@ On Ethereum, Flash Loans are reserved for expert Solidity developers. On Sui, th
 | Inability to monetize alpha strategies | Secure encryption & sale via Seal + Walrus |
 | Risk of loss on failed strategies | Automatic transaction rollback (PTB atomicity) |
 | Limited protocol support | Multi-protocol integration with custom block support |
-| Network fragmentation | Hybrid network support (Testnet marketplace + Mainnet execution) |
 
 ---
 
@@ -290,6 +289,32 @@ Distributed under the **MIT License**.
 
 💙 Built with passion during the **Sui Hackathon**
 
-**Team**: PoCInnovation
+## Our PoC team ❤️
 
-**Technologies**: Sui, Walrus, Seal, Navi Protocol, Cetus, Turbos Finance
+| [<img src="https://github.com/intermarch3.png?size=85" width=85><br><sub>Lucas Leclerc</sub>](https://github.com/intermarch3) | [<img src="https://github.com/L3yserEpitech.png?size=85" width=85><br><sub>Jules Lordet</sub>](https://github.com/L3yserEpitech) | [<img src="https://github.com/Nezketsu.png?size=85" width=85><br><sub>Grégoire Caseaux</sub>](https://github.com/Nezketsu) | [<img src="https://github.com/AurelienDEMEUSY.png?size=85" width=85><br><sub>Aurelien Demeusy</sub>](https://github.com/AurelienDEMEUSY)
+| :---: | :---: | :---: | :---: |
+
+<h2 align=center>
+PoC Innovation :
+</h2>
+
+<p align='center'>
+    <a href="https://www.linkedin.com/company/pocinnovation/mycompany/">
+        <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn logo">
+    </a>
+    <a href="https://www.instagram.com/pocinnovation/">
+        <img src="https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white" alt="Instagram logo"
+>
+    </a>
+    <a href="https://twitter.com/PoCInnovation">
+        <img src="https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter logo">
+    </a>
+    <a href="https://discord.com/invite/Yqq2ADGDS7">
+        <img src="https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white" alt="Discord logo">
+    </a>
+</p>
+<p align=center>
+    <a href="https://poc-innovation.fr/">
+        <img src="https://img.shields.io/badge/WebSite-1a2b6d?style=for-the-badge&logo=GitHub Sponsors&logoColor=white" alt="Website logo">
+    </a>
+</p>
